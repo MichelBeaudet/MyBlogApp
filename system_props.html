@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>System Parameters Viewer</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+        body {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            margin: 0;
+            background: #0b0b0b;
+            color: #e6e6e6;
+        }
+
+        header {
+            padding: 16px 20px;
+            background: #151515;
+            border-bottom: 1px solid #333;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        button {
+            padding: 8px 12px;
+            border: 1px solid #444;
+            background: #1d1d1d;
+            color: #e6e6e6;
+            cursor: pointer;
+            border-radius: 6px;
+        }
+
+            button:hover {
+                background: #232323;
+            }
+
+        main {
+            padding: 16px 20px;
+        }
+
+        pre {
+            background: #111;
+            padding: 16px;
+            border: 1px solid #333;
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+
+        small {
+            color: #aaa;
+        }
+
+        a {
+            color: #8ab4f8;
+            text-decoration: none;
+        }
+
+            a:hover {
+                text-decoration: underline;
+            }
+    </style>
+</head>
+<body>
+    <header>
+        <strong>System Properties</strong>
+        <button id="refreshBtn">Refresh (live)</button>
+        <button id="saveBtn">Download JSON</button>
+        <small id="status"></small>
+    </header>
+    <main>
+
+        <button id="btnClearConsole">clear console logs</button>
+
+        <pre id="output">Loading…</pre>
+        <p>
+            <small>
+                Tip: This page calls <code>/system_props</code> for a fresh snapshot.
+                A static snapshot is also written at startup to <code>/system_props.json</code>.
+            </small>
+        </p>
+    </main>
+
+    <script src="./js/sendLog.js"></script>
+    <script>
+        console.log("***System_props HTML page loaded");
+        sendLog("+++System_props HTML page loaded");
+    </script>
+
+    <script src="./js/sys_system_props.js"></script>
+
+    <script>
+        /* Fully-commented, minimal client-side trigger */
+        sendLog(`System_props HTML page loaded:Trying to fetch /admin/console/clear`);
+        document.getElementById('btnClearConsole').addEventListener('click', async () => {
+            try {
+                // Use POST (recommended). If you prefer GET, change to fetch('/admin/console/clear?key=...')
+                const resp = await fetch('/admin/console/clear', {
+                    method: 'GET' // POST for side-effects
+                });
+
+                if (!resp.ok) {
+                    const msg = await resp.text().catch(() => '');
+                    throw new Error(`HTTP ${resp.status} ${msg}`);
+                }
+
+                // Optional: show quick feedback
+                console.log('[web] Requested server console clear.');
+                sendLog('[web] Requested server console clear.');
+            } catch (err) {
+                console.error('Failed to clear server console:', err);
+                alert('Failed to clear server console. See console for details.');
+            }
+        });
+    </script>
+
+</body>
+</html>

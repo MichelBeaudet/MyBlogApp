@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title>Request page</title>
+</head>
+<body>
+    <h1>Request page to do some tests</h1>
+
+    <h1 id="clock"> MyClock</h1>
+    <label id="mylabel">label<br></label>
+
+    <section id="request_tests">
+        <h2>Available Tests to be done !</h2>
+        <ul>
+            <li>Web GET &lt;--- Server POST</li>
+            <li>Web POST ---&gt; Server GET</li>
+        </ul>
+    </section>
+
+
+    <!-- Start scripts -->
+    <script src="./js/sendLog.js"></script>
+    <script>
+        //clock
+        const clockElement = document.getElementById('clock');
+        //window.setInterval(clockElement.innerText = new Date().toLocaleTimeString(),1);
+
+        window.setInterval(() => {
+            clockElement.innerText = new Date().toLocaleTimeString();
+        }, 1); // rafraîchit chaque seconde
+
+        //flashing label and logging every 2 seconds
+        const labelElement = document.getElementById('mylabel');
+        labelElement.style.color = 'blue';
+        labelElement.style.fontSize = '20px';
+        labelElement.style.fontFamily = 'Arial';
+
+        let i = 0;
+
+        const interval = setInterval(() => {
+            labelElement.innerHTML = `My Label ${i}`;
+            labelElement.style.color = i % 2 === 0 ? "red" : "blue";
+            //console.log(`My Label ${i}`);
+            //sendLog(`My Label ${i}`);
+            i++;
+
+            if (i > 100) clearInterval(interval);
+        }, 2000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>Member's Login Page</title>
+    <script src="js/sendLog.js"></script>
+</head>
+<body>
+    <script>
+        sendLog('Now Starting <body> of ' + pageName);
+    </script>
+    <h1>Member's Login Page</h1>
+    <h1 id="status"></h1>
+    <label>username <input id="username" type="text" value="MikeBeaudet" /></label>
+    <label>password <input id="password" type="text" value="12345" /></label>
+
+    <button id="loginButton">Login</button>
+
+    <script>
+        sendLog("Member's Login page loaded");
+        const username = document.getElementById("username");
+        const password = document.getElementById("password");
+        const statusEl = document.getElementById("status");
+        const loginButton = document.getElementById("loginButton");
+
+        loginButton.onclick = function () {
+            const user = username.value.trim();
+            const pass = password.value.trim();
+
+            sendLog(`Attempting login with, ${user}, ${pass}`);
+
+            if (user === "MikeBeaudet" && pass === "12345") {
+                localStorage.setItem("app_user", user);            // <-- save
+                window.location.href = "members_page.html?user=" + encodeURIComponent(user); statusEl.textContent = "Login successful!";
+                statusEl.style.color = "green";
+                setTimeout(() => window.location.href = "members_page.html", 300); // go to index
+            } else {
+                statusEl.textContent = "Login failed. Please try again.";
+                statusEl.style.color = "red";
+            }
+        };
+    </script>
+
+    <br /><br />
+    <h2><a href="syslib_page.html">syslib_page</a></h2>
+
+</body>
+</html>

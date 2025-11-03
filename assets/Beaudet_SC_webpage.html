@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Beaudet Services Conseils</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
+    <style>
+        body {
+            background-image: url('PUT-YOUR-BACKGROUND-IMAGE-LINK-HERE');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            min-height: 100vh;
+            backdrop-filter: brightness(0.9);
+        }
+
+        main.container,
+        footer.container,
+        section[aria-label] .container {
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 2rem;
+            border-radius: 12px;
+            margin-top: 2rem;
+        }
+
+        nav {
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 8px;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="container-fluid">
+        <ul>
+            <li><strong>Beaudet Services Conseils</strong></li>
+        </ul>
+        <ul>
+            <li><a href="#about">About</a></li>
+            <li><a href="#services">Our Services</a></li>
+            <li><a href="#contact" role="button">Contact Us</a></li>
+        </ul>
+    </nav>
+
+    <main class="container">
+        <div class="grid">
+            <section id="about">
+                <hgroup>
+                    <h2>About</h2>
+                    <h3>Who we are</h3>
+                </hgroup>
+                <p>Beaudet Services Conseils is a professional consulting firm dedicated to delivering tailored strategies and solutions to clients across various sectors. Our commitment to quality and innovation drives our success.</p>
+                <figure>
+                    <img src="PUT-YOUR-BACKGROUND-IMAGE-LINK-HERE" alt="City background" />
+                    <figcaption><a href="#" target="_blank">Background image placeholder</a></figcaption>
+                </figure>
+            </section>
+            <section id="about">
+                <h3>Our Mission</h3>
+                <p>To empower organizations with insights and solutions that lead to sustainable growth and operational excellence.</p>
+                <h3>Our Vision</h3>
+                <p>To be the leading consulting service known for integrity, innovation, and impactful results.</p>
+            </section>
+</div>
+    </main>
+
+    <section aria-label="Subscribe example">
+        <div class="container">
+            <article>
+                <hgroup>
+                    <h2>Stay Connected</h2>
+                    <h3>Subscribe to our newsletter</h3>
+                </hgroup>
+                <form class="grid">
+                    <input type="text" id="firstname" name="firstname" placeholder="First name" aria-label="First name" required />
+                    <input type="email" id="email" name="email" placeholder="Email address" aria-label="Email address" required />
+                    <button type="submit" onclick="event.preventDefault()">Subscribe</button>
+                </form>
+            </article>
+        </div>
+    </section>
+
+    <footer class="container">
+        <small>
+            <a href="#">Privacy Policy</a> • <a href="#">Terms of Service</a>
+        </small>
+    </footer>
+
+</body>
+</html>

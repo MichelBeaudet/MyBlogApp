@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <title>DOM Dashboard — Window • Document • Element (ESM)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" href="data:,">
+  <style>
+    :root { --fg:#111; --muted:#555; --bg:#fafafa; --card:#fff; --bd:#e6e6e6; --accent:#3b82f6; }
+    html,body{margin:0;padding:0;background:var(--bg);color:var(--fg);font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif}
+    header{padding:18px 16px 8px}
+    h1{margin:0;font-size:20px}
+    .meta{color:var(--muted);font-size:12px}
+    nav.tabs{display:flex;gap:8px;flex-wrap:wrap;padding:10px 16px;border-bottom:1px solid var(--bd);background:#fff;position:sticky;top:0;z-index:5}
+    .tab{cursor:pointer;border:1px solid var(--bd);background:#fff;padding:8px 12px;border-radius:999px}
+    .tab[aria-selected="true"]{border-color:var(--accent);box-shadow:0 0 0 2px rgba(59,130,246,.12)}
+    .panel{display:none;padding:0 16px 40px;max-width:1200px;margin:0 auto}
+    .panel[aria-hidden="false"]{display:block}
+    .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+    button{cursor:pointer;border:1px solid var(--bd);background:var(--card);padding:8px 10px;border-radius:8px}
+    details{background:var(--card);border:1px solid var(--bd);border-radius:10px;margin:10px 0;overflow:hidden}
+    details[open]{box-shadow:0 1px 8px rgba(0,0,0,.05)}
+    summary{list-style:none;padding:14px;font-weight:600;background:linear-gradient(#fff,#fbfbfb)}
+    summary::-webkit-details-marker{display:none}
+    .grid{overflow:auto}
+    table{border-collapse:collapse;width:100%}
+    th,td{border-top:1px solid var(--bd);padding:10px 12px;text-align:left;vertical-align:top}
+    th{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;background:#fcfcfc;position:sticky;top:0}
+    .k{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#0b4;white-space:nowrap}
+    .v{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+    .na{color:#999}
+    .pill{display:inline-block;padding:2px 8px;border:1px solid var(--bd);border-radius:999px;font-size:12px;background:#fff}
+    .ok{color:#0a7}.err{color:#b00}
+    .note{margin:6px 0 0 14px;color:#666}
+    footer{padding:16px;color:var(--muted);font-size:12px;text-align:center}
+    .picker-highlight { outline: 2px dashed var(--accent) !important; outline-offset: 2px !important; }
+    .target-badge{border:1px solid var(--bd);background:#fff;padding:2px 6px;border-radius:6px;font-size:12px}
+  </style>
+</head>
+<body>
+<header>
+  <h1>DOM Dashboard — <code>window</code> • <code>document</code> • <code>Element</code></h1>
+  <div class="meta">Rapports en lecture seule pour diagnostic – export JSON – modules ESM.</div>
+</header>
+
+<nav class="tabs" role="tablist" aria-label="DOM Dashboard">
+  <button class="tab" role="tab" id="tab-window" aria-controls="panel-window" aria-selected="true">Window Report</button>
+  <button class="tab" role="tab" id="tab-document" aria-controls="panel-document" aria-selected="false">Document Report</button>
+  <button class="tab" role="tab" id="tab-element" aria-controls="panel-element" aria-selected="false">Element Report</button>
+</nav>
+
+<section id="panel-window" class="panel" role="tabpanel" aria-labelledby="tab-window" aria-hidden="false">
+  <div class="toolbar">
+    <button id="w-refresh">↻ Actualiser</button>
+    <button id="w-copy">📋 Copier JSON</button>
+    <button id="w-export">⬇️ Export JSON</button>
+    <span class="pill">HTTPS ? <strong id="w-sec">-</strong></span>
+    <span class="pill">DPR : <strong id="w-dpr">-</strong></span>
+    <span class="pill">Viewport : <strong id="w-vp">-</strong></span>
+  </div>
+  <main id="w-container"></main>
+</section>
+
+<section id="panel-document" class="panel" role="tabpanel" aria-labelledby="tab-document" aria-hidden="true">
+  <div class="toolbar">
+    <button id="d-refresh">↻ Actualiser</button>
+    <button id="d-copy">📋 Copier JSON</button>
+    <button id="d-export">⬇️ Export JSON</button>
+    <span class="pill">Lang : <strong id="d-lang">-</strong></span>
+    <span class="pill">Dir : <strong id="d-dir">-</strong></span>
+    <span class="pill">Ready : <strong id="d-ready">-</strong></span>
+  </div>
+  <main id="d-container"></main>
+</section>
+
+<section id="panel-element" class="panel" role="tabpanel" aria-labelledby="tab-element" aria-hidden="true">
+  <div class="toolbar">
+    <button id="e-pick">🎯 Choisir élément</button>
+    <button id="e-refresh">↻ Actualiser</button>
+    <button id="e-copy">📋 Copier JSON</button>
+    <button id="e-export">⬇️ Export JSON</button>
+    <span class="pill">Cible : <strong id="e-target" class="target-badge">document.documentElement</strong></span>
+    <span class="pill">Enfants : <strong id="e-children">-</strong></span>
+    <span class="pill">Shadow ? <strong id="e-shadow">-</strong></span>
+  </div>
+  <main id="e-container"></main>
+</section>
+
+<footer>© Dashboard DOM – Extraction non intrusive. Certaines APIs nécessitent HTTPS/permissions.</footer>
+
+<script type="module">
+    import * as W from './js/DOM_window.js';
+    import * as D from './js/DOM_document.js';
+    import * as E from './js/DOM_element.js';
+
+  // --- Tabs ---
+  const tabs = Array.from(document.querySelectorAll('.tab'));
+  const panels = {
+    window: document.getElementById('panel-window'),
+    document: document.getElementById('panel-document'),
+    element: document.getElementById('panel-element'),
+  };
+  function show(name){
+    tabs.forEach(t=> t.setAttribute('aria-selected', String(t.id === 'tab-'+name)));
+    Object.entries(panels).forEach(([k,p])=> p.setAttribute('aria-hidden', String(k!==name)));
+  }
+  tabs.forEach(t=> t.addEventListener('click', ()=> show(t.id.replace('tab-','')) ));
+
+  // --- Window Report ---
+  async function renderWindow(){
+    const data = await W.collectAll();
+    W.renderInto('w-container', data);
+    document.getElementById('w-sec').textContent = location.protocol === 'https:' ? 'Oui' : 'Non';
+    document.getElementById('w-dpr').textContent = String(window.devicePixelRatio || 1);
+    document.getElementById('w-vp').textContent = `${window.innerWidth}×${window.innerHeight}`;
+  }
+  document.getElementById('w-refresh').addEventListener('click', renderWindow);
+  document.getElementById('w-copy').addEventListener('click', W.copyJSON);
+  document.getElementById('w-export').addEventListener('click', W.downloadJSON);
+
+  // --- Document Report ---
+  async function renderDocument(){
+    const data = await D.collectAll();
+    D.renderInto('d-container', data);
+    document.getElementById('d-lang').textContent = document.documentElement?.lang || 'N/A';
+    document.getElementById('d-dir').textContent = document.documentElement?.dir || 'N/A';
+    document.getElementById('d-ready').textContent = document.readyState;
+  }
+  document.getElementById('d-refresh').addEventListener('click', renderDocument);
+  document.getElementById('d-copy').addEventListener('click', D.copyJSON);
+  document.getElementById('d-export').addEventListener('click', D.downloadJSON);
+
+  // --- Element Report ---
+  let current = document.documentElement;
+  async function renderElement(){
+    const res = await E.collectFor(current);
+    E.renderInto('e-container', res.report);
+    document.getElementById('e-target').textContent = res.identity.selector || res.identity.tagName;
+    document.getElementById('e-children').textContent = String(res.identity.childElementCount);
+    document.getElementById('e-shadow').textContent = res.identity.hasShadowRoot ? 'Oui' : 'Non';
+  }
+  document.getElementById('e-refresh').addEventListener('click', renderElement);
+  document.getElementById('e-copy').addEventListener('click', async ()=>{
+    const res = await E.collectFor(current);
+    const json = JSON.stringify(res, null, 2);
+    try { await navigator.clipboard.writeText(json); alert('JSON copié'); }
+    catch { alert('Copie impossible'); }
+  });
+  document.getElementById('e-export').addEventListener('click', async ()=>{
+    const res = await E.collectFor(current);
+    const json = JSON.stringify(res, null, 2);
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([json], {type:'application/json'}));
+    a.download = 'element-report.json'; a.click(); URL.revokeObjectURL(a.href);
+  });
+
+  // Simple element picker (reuse E.startPicker util inside element.js if present)
+  // Inline picker to avoid extra wiring:
+  let picking=false, tip=null, lastHover=null;
+  function startPicker(){
+    if (picking) return; picking = true;
+    tip = document.createElement('div');
+    tip.style.cssText = 'position:fixed;pointer-events:none;background:#111;color:#fff;padding:4px 6px;border-radius:6px;font:12px ui-monospace,Menlo,Consolas,monospace;z-index:2147483647;';
+    tip.textContent = 'Cliquer pour sélectionner – Échap pour annuler';
+    document.body.appendChild(tip);
+    window.addEventListener('mousemove', onMove, true);
+    window.addEventListener('keydown', onKey, true);
+    window.addEventListener('click', onClick, true);
+  }
+  function stopPicker(){
+    picking=false;
+    if (tip){ tip.remove(); tip=null; }
+    if (lastHover){ lastHover.classList.remove('picker-highlight'); lastHover=null; }
+    window.removeEventListener('mousemove', onMove, true);
+    window.removeEventListener('keydown', onKey, true);
+    window.removeEventListener('click', onClick, true);
+  }
+  function onMove(e){
+    tip.style.left = (e.clientX+12)+'px'; tip.style.top=(e.clientY+12)+'px';
+    const el = document.elementFromPoint(e.clientX, e.clientY);
+    if (!el) return;
+    if (lastHover && lastHover!==el) lastHover.classList.remove('picker-highlight');
+    lastHover = el; el.classList.add('picker-highlight');
+    const cls = el.className ? ('.'+String(el.className).trim().split(/\s+/).join('.')) : '';
+    tip.textContent = el.tagName.toLowerCase() + (el.id ? '#'+el.id : '') + cls;
+  }
+  function onKey(e){ if (e.key==='Escape') stopPicker(); }
+  async function onClick(e){
+    e.preventDefault(); e.stopPropagation();
+    current = lastHover || e.target; stopPicker(); await renderElement();
+  }
+  document.getElementById('e-pick').addEventListener('click', startPicker);
+
+  // Initial renders
+  renderWindow(); renderDocument(); renderElement();
+</script>
+</body>
+</html>

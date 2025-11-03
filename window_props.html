@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Navigator Properties Page</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+       h1 {
+            font-weight: 900;
+            color: midnightblue;
+        }
+        #button_style {
+            display: flex; /* enable flexbox */
+            align-items: center; /* vertically align items */
+            gap: 1rem; /* space between h2 and button */
+            font-weight: 900;
+        }
+        /* make the h4 blue */
+        #button_style h4 {
+            color: blue;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Window Properties Page</h1>
+    </header>
+
+    <main id="content">
+
+        <script>
+            // This is the script to see errors in the web page.
+            window.onerror = function (message, source, lineno, colno, error) {
+                const errBox = document.createElement("pre");
+                errBox.style.color = "red";
+                errBox.textContent = `Error: ${message}\nSource: ${source}\nLine: ${lineno}, Col: ${colno}`;
+                document.body.appendChild(errBox);
+            };
+        </script>
+
+        <p id="paragraph1"> Put sometyhing here in paragraph1 </p>
+
+    </main>
+
+    <!-- Script to send console.log to the server via sendLog.js-->
+    <script src="./js/sendLog.js"></script>
+    <script>
+        sendLog("+++window page loaded");
+    </script>
+
+    <script src="./js/BASE_window_props.js"></script>
+</body>
+</html>

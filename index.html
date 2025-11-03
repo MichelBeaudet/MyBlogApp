@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Michel — Blog v20251102</title>
+    <meta name="description" content="Michel, PhD — Nuclear Engineering & Philosophy of Science. Research notes, essays, and updates.">
+    <!-- Basic Open Graph for nicer shares -->
+    <meta property="og:title" content="Michel — Nuclear Engineering | Philosophy of Science">
+    <meta property="og:description" content="Research, essays, and notes by Michel (PhD).">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="assets/og-cover.png">
+    <link rel="stylesheet" href="styles.css">
+    <script src="js/sendLog.js"></script>
+</head>
+<body>
+    <script>
+        sendLog('Now Starting <body> of ' + pageName);
+    </script>
+
+    <header class="site-header">
+        <nav class="container nav">
+            <a class="brand" href="index.html" aria-label="Michel home">
+                <img src="assets/logo.svg" alt="" width="28" height="28" aria-hidden="true">
+                <span>Michel</span>
+            </a>
+            <button class="nav-toggle" aria-expanded="false" aria-controls="primary-nav">☰</button>
+            <ul id="primary-nav" class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="about.html">About</a></li>
+                <li><a href="research.html">Research</a></li>
+                <li><a href="blog.html">Blog</a></li>
+                <li><a href="bookstore.html">My Book Store</a></li>
+                <li><a href="Beaudet_SC_webpage.html">Beaudet Services Conseils</a></li>
+                <li><a href="members_login_page.html">Member's Page Login</a></li>
+                <li><a href="contact.html">Contact</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <!-- HERO: name + tagline -->
+    <section class="hero">
+        <div class="container">
+            <h1>Michel, PhD — Nuclear Engineering | Philosophy of Science</h1>
+            <p class="tagline">Rigorous thinking at the edge of technology and epistemology.</p>
+            <div class="hero-cta">
+                <a class="btn" href="blog.html">Read the Blog</a>
+                <a class="btn ghost" href="research.html">See Research</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Featured post + recent grid (populated by script.js using posts.json) -->
+    <main class="container" id="home-main" data-page="home">
+        <section aria-labelledby="featured-title" class="featured">
+            <h2 id="featured-title">Featured</h2>
+            <article id="featured-article" class="card feature-card" aria-live="polite">
+                <!-- JS injects featured post here -->
+            </article>
+        </section>
+
+        <section aria-labelledby="recent-title" class="recent">
+            <h2 id="recent-title">Recent posts</h2>
+            <div id="recent-grid" class="grid">
+                <!-- JS injects recent posts here -->
+            </div>
+        </section>
+    </main>
+    <footer class="site-footer">
+        <div class="container footer-grid">
+            <section>
+                <h3>Credentials</h3>
+                <p>PhD, Nuclear Engineering • Researcher, Philosophy of Science</p>
+            </section>
+            <section>
+                <h3>Elsewhere</h3>
+                <ul class="social">
+                    <li><a rel="me" href="https://www.linkedin.com/in/michel-beaudet-47918756/?lipi=urn%3Ali%3Apage%3Ad_flagship3_feed%3BVnl80CU1Sv%2BIsepNN%2Bckcg%3D%3D" aria-label="Michel on LinkedIn">LinkedIn</a></li>
+                    <li><a rel="me" href="https://github.com/MichelBeaudet" aria-label="Michel on GitHub">GitHub</a></li>
+                </ul>
+            </section>
+            <section>
+                <h3>Newsletter</h3>
+                <!-- This form is a placeholder; wire to your provider later -->
+                <form class="newsletter" id="newsletter-form" data-enhanced="true">
+                    <label for="email">Get updates (email):</label>
+                    <input id="email" name="email" type="email" placeholder="you@example.com" required>
+                    <button type="submit">Subscribe</button>
+                    <p class="note">We’ll never share your email. (Demo only.)</p>
+                </form>
+            </section>
+        </div>
+        <p class="copyright">© <span id="year"></span> Michel. All rights reserved.</p>
+    </footer>
+
+</body>
+
+</html>

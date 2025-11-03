@@ -1,0 +1,364 @@
+<!doctype html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8" />
+    <title>Self-contained Hacker Console — JS (simulate) / Pyodide (optional)</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <style>
+        :root {
+            --bg: #06080b;
+            --fg: #e8ecef;
+            --panel: #0b0f13;
+            --muted: #7b8a8d;
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        html, body {
+            height: 100%;
+            margin: 0;
+            background: var(--bg);
+            color: var(--fg);
+            font-family: Consolas,Menlo,Monaco,monospace
+        }
+
+        .container {
+            max-width: 980px;
+            margin: 28px auto;
+            padding: 12px
+        }
+
+        .hdr {
+            color: #9aff9d;
+            margin: 0 0 10px 0
+        }
+
+        .screen {
+            background: linear-gradient(180deg,#0008,#0b0f1388);
+            border: 1px solid #10161c;
+            border-radius: 8px;
+            padding: 14px;
+            min-height: 440px;
+            box-shadow: 0 10px 30px #0008;
+            overflow: auto;
+        }
+
+        pre {
+            margin: 0;
+            white-space: pre-wrap;
+            word-break: break-word;
+            font-size: 14px
+        }
+
+        .controls {
+            margin-top: 12px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center
+        }
+
+            .controls input[type="number"] {
+                width: 110px;
+                padding: 6px;
+                border-radius: 6px;
+                border: 1px solid #24313c;
+                background: #0f1419;
+                color: #d8d8d8
+            }
+
+            .controls button, .controls select {
+                padding: 6px 10px;
+                border-radius: 6px;
+                border: none;
+                background: #1f262e;
+                color: #e8e8e8;
+                cursor: pointer
+            }
+
+                .controls button:disabled {
+                    opacity: .5;
+                    cursor: default
+                }
+
+        .line span {
+            font-weight: 600;
+            text-shadow: 0 0 10px currentColor
+        }
+
+        .status {
+            font-size: 12px;
+            color: var(--muted);
+            margin-left: 6px
+        }
+
+        .mode-note {
+            font-size: 13px;
+            color: var(--muted);
+            margin-top: 8px
+        }
+
+        .small {
+            font-size: 12px;
+            color: var(--muted)
+        }
+
+        .toggle {
+            display: inline-flex;
+            gap: 6px;
+            align-items: center
+        }
+
+        .center {
+            display: flex;
+            gap: 8px;
+            align-items: center
+        }
+
+        .footer {
+            margin-top: 10px;
+            color: var(--muted);
+            font-size: 12px
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2 class="hdr">>>> Self-contained Hacker Console</h2>
+
+        <div id="screen" class="screen"><pre id="out">Prêt. Choisis un mode, clique "Start" ou "One".</pre></div>
+
+        <div class="controls">
+            <label>
+                Mode
+                <select id="mode">
+                    <option value="simulate">Simulate (JS only)</option>
+                    <option value="pyodide">Pyodide (real Python in browser)</option>
+                </select>
+            </label>
+
+            <label>
+                Interval (ms)
+                <input id="ms" type="number" min="100" step="100" value="900" />
+            </label>
+
+            <div class="center">
+                <button id="start">Start</button>
+                <button id="stop" disabled>Stop</button>
+                <button id="one">One</button>
+                <button id="clear">Clear</button>
+            </div>
+
+            <span id="status" class="status">Statut: prêt</span>
+        </div>
+
+        <div class="mode-note" id="modeNote">Mode simulate active — aucune dépendance externe.</div>
+        <div class="footer">Note: Pyodide charge ~10–30 MB from CDN the first time. If tu refuses Pyodide, reste en simulate.</div>
+    </div>
+
+    <!-- Pyodide: loaded on demand only (no blocking) -->
+    <script>
+/*
+  Single-file app that either:
+  - simulate: returns random Python-like blocks from JS (fast, offline), or
+  - pyodide: loads Pyodide on demand and runs a tiny Python snippet that prints JSON {"code": "..."}
+*/
+
+        const out = document.getElementById('out');
+        const statusEl = document.getElementById('status');
+        const msInput = document.getElementById('ms');
+        const startBtn = document.getElementById('start');
+        const stopBtn = document.getElementById('stop');
+        const oneBtn = document.getElementById('one');
+        const clearBtn = document.getElementById('clear');
+        const modeSelect = document.getElementById('mode');
+        const modeNote = document.getElementById('modeNote');
+
+        const PALETTE = ["#39ff14","#00ffff","#ffd166","#ff6b6b","#a0e7e5","#b9f18a","#b388ff","#64ffda"];
+
+        let timer = null;
+        let pyodide = null;
+        let pyReady = false;
+
+        // --- SNIPPETS (simulate mode) ---
+        const STATIC_SNIPPETS = [
+        `def fib(n):
+            a,b=0,1
+            for _ in range(n):
+                yield a
+                a,b=b,a+b`,
+
+        `from dataclasses import dataclass
+        @dataclass
+        class Point:
+            x: float
+            y: float
+            def norm2(self):
+                return self.x*self.x + self.y*self.y`,
+
+        `class Stack:
+            def __init__(self):
+                self._data=[]
+            def push(self,x): self._data.append(x)
+            def pop(self): return self._data.pop()`,
+
+        `async def fetch(n):
+            import asyncio
+            await asyncio.sleep(0.01)
+            return n*n`,
+
+        `with open('data.txt','w',encoding='utf-8') as f:
+            f.write('hello')`,
+
+        `def pairwise_sum(xs):
+            import itertools as it
+            return [a+b for a,b in it.pairwise(xs)]`,
+
+        `try:
+            1/0
+        except ZeroDivisionError:
+            pass`,
+
+        `# short util
+        @staticmethod
+        def util(x): return x*x`,
+
+        `squares = [i*i for i in range(10)]`,
+        ];
+
+        // --- Utility: colorize a block into HTML ---
+        function colorizeBlock(text){
+          return text.split('\\n').map(line=>{
+            const c = PALETTE[Math.floor(Math.random()*PALETTE.length)];
+            const safe = line.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+            return `<div class="line"><span style="color:${c}">${safe}</span></div>`;
+          }).join('\\n');
+        }
+
+        // --- Simulate mode: immediate local generator ---
+        function getSimulatedSnippet(){
+          return STATIC_SNIPPETS[Math.floor(Math.random()*STATIC_SNIPPETS.length)];
+        }
+
+        // --- Pyodide mode: lazy load and call Python to produce JSON {"code": "..."} ---
+        async function ensurePyodide(){
+          if(pyReady) return;
+          if(pyodide) return; // loading in progress
+          statusEl.textContent = "Statut: loading Pyodide…";
+          // load script tag
+          await new Promise((resolve, reject) => {
+            const s = document.createElement('script');
+            s.src = "https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js";
+            s.onload = resolve;
+            s.onerror = () => reject(new Error("Failed to load Pyodide script"));
+            document.head.appendChild(s);
+          });
+          try {
+            pyodide = await loadPyodide({ indexURL: "https://cdn.jsdelivr.net/pyodide/v0.26.2/full/" });
+            // install (define) Python helper next_snippet()
+            const py = `
+        import random
+        SNIPPETS = [
+        ${STATIC_SNIPPETS.map(s=> "    " + JSON.stringify(s)).join(",\n")}
+        ]
+        def next_snippet():
+            return {"code": random.choice(SNIPPETS)}
+        `;
+            await pyodide.runPythonAsync(py);
+            pyReady = true;
+            statusEl.textContent = "Statut: Pyodide ready";
+          } catch(e){
+            pyodide = null;
+            statusEl.textContent = "Statut: Pyodide error";
+            console.error("Pyodide init error:", e);
+            throw e;
+          }
+        }
+
+        async function getPyodideSnippet(){
+          await ensurePyodide();
+          // call Python function next_snippet() which returns a dict; convert to JS
+          const res = await pyodide.runPythonAsync("next_snippet()");
+          // pyodide returns PyProxy -> convert to JS object/string
+          // simplest: stringify in Python and parse here:
+          const s = await pyodide.runPythonAsync("import json; json.dumps(next_snippet(), ensure_ascii=False)");
+          try {
+            const obj = JSON.parse(s);
+            return obj.code || "# no-code";
+          } catch(e){
+            console.error("Parsing JSON from pyodide:", e, s);
+            return "# pyodide returned invalid JSON";
+          }
+        }
+
+        // --- Top-level fetcher: selects mode and returns code string ---
+        async function fetchSnippet(){
+          const mode = modeSelect.value;
+          if(mode === "simulate"){
+            return getSimulatedSnippet();
+          } else {
+            // pyodide
+            try {
+              return await getPyodideSnippet();
+            } catch (e){
+              return `# Pyodide error: ${e.message || e}`;
+            }
+          }
+        }
+
+        // --- UI actions ---
+        async function showOne(){
+          statusEl.textContent = "Statut: fetching…";
+          try {
+            const code = await fetchSnippet();
+            out.insertAdjacentHTML("beforeend", colorizeBlock(code) + "\\n");
+            out.parentElement.scrollTop = out.parentElement.scrollHeight;
+            statusEl.textContent = "Statut: OK";
+          } catch(e){
+            out.insertAdjacentHTML("beforeend", `<div class="line"><span style="color:#ff6b6b">[error] ${e.message || e}</span></div>\\n`);
+            statusEl.textContent = "Statut: erreur";
+            console.error(e);
+          }
+        }
+
+        function startLoop(){
+          if(timer) return;
+          startBtn.disabled = true; stopBtn.disabled = false; msInput.disabled = true; modeSelect.disabled = true;
+          showOne();
+          timer = setInterval(showOne, Math.max(100, Number(msInput.value) || 900));
+          statusEl.textContent = "Statut: en cours";
+        }
+
+        function stopLoop(){
+          if(!timer) return;
+          clearInterval(timer); timer = null;
+          startBtn.disabled=false; stopBtn.disabled=true; msInput.disabled=false; modeSelect.disabled=false;
+          statusEl.textContent = "Statut: arrêté";
+        }
+
+        // --- events ---
+        startBtn.addEventListener('click', startLoop);
+        stopBtn.addEventListener('click', stopLoop);
+        oneBtn.addEventListener('click', showOne);
+        clearBtn.addEventListener('click', ()=>{ out.textContent=''; statusEl.textContent='Statut: prêt'; });
+        modeSelect.addEventListener('change', ()=>{
+          modeNote.textContent = modeSelect.value === 'simulate' ? "Mode simulate active — aucune dépendance externe." :
+            "Mode pyodide sélectionné — Pyodide sera chargé à la première requête.";
+          // if switching to pyodide and already running, preload
+          if(modeSelect.value === 'pyodide' && timer){
+            // preload in background but don't block
+            ensurePyodide().catch(()=>{/*ignore*/});
+          }
+        });
+
+        // Optional: keyboard shortcuts
+        document.addEventListener('keydown', (e)=>{
+          if(e.key === ' ') { e.preventDefault(); showOne(); }
+          if(e.key === 's') startLoop();
+          if(e.key === 'x') stopLoop();
+        });
+    </script>
+</body>
+</html>

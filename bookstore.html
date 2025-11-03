@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Michel’s Bookshop | Librairie de Michel</title>
+
+    <!-- Favicon/logo (optional) -->
+    <link rel="icon" href="assets/logo.svg" />
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="bookstore.css" />
+
+    <!-- App configuration (strict JSON; no comments) -->
+    <!-- Client secret:EN3RMw33TSeOsWsMQY4aMkRLdYsuV1OGfc6KE0ytQyMtc-7fexnHTZFn7Bz7va_Nge3BtXpmB_U4gXng -->
+    <script type="application/json" id="app-config">
+        {
+          "shopName": "Michel’s Bookshop",
+          "currency": "CAD",
+          "localeDefault": "en",
+          "supportedLocales": ["en", "fr"],
+          "shipping": { "type": "flat", "amount": 20.00 },
+          "taxes": { "apply": false, "rates": { "GST": 0, "QST": 0 } },
+          "checkout": { "mode": "per-item" },
+          "paypal": { "environment": "sandbox", "clientId": "sb" },
+          "catalog": { "source": "html", "url": "BookBuddy.htm" },
+          "assets": { "missingCover": "img/cover_placeholder.png" }
+        }
+    </script>
+
+    <!-- I18N -->
+    <script type="application/json" id="i18n">
+        {
+          "en": {
+            "title": "Michel’s Bookshop",
+            "subtitle": "Curated books in Philosophy, Science & Magic",
+            "label.language": "Language",
+            "cart": "Cart",
+            "filters": "Filters",
+            "search.label": "Search (title, author, ISBN)",
+            "genre.label": "Genre",
+            "genre.all": "All genres",
+            "category.label": "Category",
+            "category.all": "All categories",
+            "sort.label": "Sort by",
+            "sort.titleAsc": "Title (A→Z)",
+            "sort.titleDesc": "Title (Z→A)",
+            "sort.priceAsc": "Price (low→high)",
+            "sort.priceDesc": "Price (high→low)",
+            "sort.authorAsc": "Author (A→Z)",
+            "sort.authorDesc": "Author (Z→A)",
+            "sort.yearDesc": "Year (new→old)",
+            "sort.yearAsc": "Year (old→new)",
+            "filters.clear": "Clear filters",
+            "catalog": "Catalog",
+            "results.count": "0 results",
+            "qty.label": "Quantity",
+            "addToCart": "Add to cart",
+            "remove": "Remove",
+            "cart.title": "Your basket",
+            "summary.subtotal": "Subtotal",
+            "summary.shipping": "Shipping (flat)",
+            "summary.taxes": "Taxes",
+            "summary.total": "Total",
+            "checkout.disabled": "Checkout (enable via PayPal)"
+          },
+          "fr": {
+            "title": "Librairie de Michel",
+            "subtitle": "Sélection d’ouvrages en philosophie, sciences et magie",
+            "label.language": "Langue",
+            "cart": "Panier",
+            "filters": "Filtres",
+            "search.label": "Recherche (titre, auteur, ISBN)",
+            "genre.label": "Genre",
+            "genre.all": "Tous les genres",
+            "category.label": "Catégorie",
+            "category.all": "Toutes les catégories",
+            "sort.label": "Trier par",
+            "sort.titleAsc": "Titre (A→Z)",
+            "sort.titleDesc": "Titre (Z→A)",
+            "sort.priceAsc": "Prix (bas→haut)",
+            "sort.priceDesc": "Prix (haut→bas)",
+            "sort.authorAsc": "Auteur (A→Z)",
+            "sort.authorDesc": "Auteur (Z→A)",
+            "sort.yearDesc": "Année (récent→ancien)",
+            "sort.yearAsc": "Année (ancien→récent)",
+            "filters.clear": "Réinitialiser les filtres",
+            "catalog": "Catalogue",
+            "results.count": "0 résultats",
+            "qty.label": "Quantité",
+            "addToCart": "Ajouter au panier",
+            "remove": "Retirer",
+            "cart.title": "Votre panier",
+            "summary.subtotal": "Sous-total",
+            "summary.shipping": "Livraison (forfait)",
+            "summary.taxes": "Taxes",
+            "summary.total": "Total",
+            "checkout.disabled": "Paiement (activer via PayPal)"
+          }
+        }
+    </script>
+
+    <!-- Logic -->
+    <script src="js/sendLog.js"></script>
+    <script src="bookstore.js" defer></script>
+</head>
+
+<body>
+    <script>
+        sendLog('Now Starting <body> of ' + pageName);
+    </script>
+    <!-- HEADER -->
+    <header class="topbar" role="banner">
+        <div class="brand">
+            <img src="assets/logo.svg" alt="Beaudet Services Conseils logo" class="logo" />
+            <div class="titles">
+                <h1 data-i18n="title">Michel’s Bookshop</h1>
+                <p class="subtitle" data-i18n="subtitle">Curated books in Philosophy, Science & Magic</p>
+            </div>
+        </div>
+
+        <nav class="actions" aria-label="Global actions">
+            <label for="langSelect" class="sr-only" data-i18n="label.language">Language</label>
+            <select id="langSelect" class="lang-select" aria-label="Language">
+                <option value="en">English</option>
+                <option value="fr">Français</option>
+            </select>
+
+            <button id="openCartBtn" class="cart-btn" aria-haspopup="dialog" aria-controls="cartDrawer" aria-expanded="false">
+                <span class="cart-icon" aria-hidden="true">🛒</span>
+                <span data-i18n="cart">Cart</span>
+                <span id="cartCount" class="badge" aria-live="polite">0</span>
+            </button>
+        </nav>
+    </header>
+
+    <!-- LAYOUT -->
+    <main class="layout" role="main">
+        <!-- Sidebar -->
+        <aside class="sidebar" aria-label="Filters">
+            <h2 data-i18n="filters">Filters</h2>
+
+            <div class="filter">
+                <label for="searchInput" data-i18n="search.label">Search (title, author, ISBN)</label>
+                <input id="searchInput" type="search" placeholder="Koestler, Lorayne, 978…" />
+            </div>
+
+            <!-- Genre selector (updated) -->
+            <div class="filter">
+                <label for="genreSelect" data-i18n="genre.label">Genre</label>
+                <select id="genreSelect">
+                    <option value="" data-i18n="genre.all">All genres</option>
+                </select>
+            </div>
+
+            <div class="filter">
+                <label for="sortSelect" data-i18n="sort.label">Sort by</label>
+                <select id="sortSelect">
+                    <option value="title-asc" data-i18n="sort.titleAsc">Title (A→Z)</option>
+                    <option value="title-desc" data-i18n="sort.titleDesc">Title (Z→A)</option>
+                    <option value="price-asc" data-i18n="sort.priceAsc">Price (low→high)</option>
+                    <option value="price-desc" data-i18n="sort.priceDesc">Price (high→low)</option>
+                    <option value="author-asc" data-i18n="sort.authorAsc">Author (A→Z)</option>
+                    <option value="author-desc" data-i18n="sort.authorDesc">Author (Z→A)</option>
+                    <option value="year-desc" data-i18n="sort.yearDesc">Year (new→old)</option>
+                    <option value="year-asc" data-i18n="sort.yearAsc">Year (old→new)</option>
+                </select>
+            </div>
+
+            <button id="clearFiltersBtn" class="secondary" data-i18n="filters.clear">Clear filters</button>
+        </aside>
+
+        <!-- Catalog -->
+        <section class="content">
+            <h2 class="sr-only" data-i18n="catalog">Catalog</h2>
+            <div class="toolbar">
+                <p id="resultCount" aria-live="polite" data-i18n="results.count">0 results</p>
+            </div>
+            <div id="catalogGrid" class="grid" aria-live="polite" aria-busy="true"></div>
+        </section>
+    </main>
+
+    <!-- CART -->
+    <dialog id="cartDrawer" class="cart-drawer" aria-labelledby="cartTitle">
+        <form method="dialog" class="cart-header">
+            <h2 id="cartTitle" data-i18n="cart.title">Your basket</h2>
+            <button id="closeCartBtn" class="icon-btn" aria-label="Close cart">✕</button>
+        </form>
+
+        <div id="cartItems" class="cart-items" aria-live="polite"></div>
+
+        <div class="cart-summary">
+            <div class="row">
+                <span data-i18n="summary.subtotal">Subtotal</span>
+                <strong id="summarySubtotal">$0.00</strong>
+            </div>
+            <div class="row">
+                <span data-i18n="summary.shipping">Shipping (flat)</span>
+                <strong id="summaryShipping">$20.00</strong>
+            </div>
+            <div class="row">
+                <span data-i18n="summary.taxes">Taxes</span>
+                <strong id="summaryTaxes">$0.00</strong>
+            </div>
+            <div class="row total">
+                <span data-i18n="summary.total">Total</span>
+                <strong id="summaryTotal">$0.00</strong>
+            </div>
+
+            <div id="paypal-button-container" class="paypal-container" aria-live="polite"></div>
+            <button id="checkoutDisabled" class="primary" disabled data-i18n="checkout.disabled">Checkout (enable via PayPal)</button>
+        </div>
+    </dialog>
+
+    <!-- Templates -->
+    <template id="tpl-book-card">
+        <article class="card">
+            <figure class="cover-wrap">
+                <img class="cover" alt="" loading="lazy" />
+            </figure>
+            <header class="card-header">
+                <h3 class="title"></h3>
+                <p class="author"></p>
+            </header>
+            <p class="meta">
+                <span class="year"></span>
+                <span class="lang"></span>
+                <span class="condition"></span>
+            </p>
+            <div class="price-row">
+                <strong class="price"></strong>
+            </div>
+            <div class="card-actions">
+                <label class="sr-only" data-i18n="qty.label">Quantity</label>
+                <input class="qty" type="number" min="1" value="1" inputmode="numeric" />
+                <button class="add-btn primary" data-i18n="addToCart">Add to cart</button>
+            </div>
+        </article>
+    </template>
+
+    <template id="tpl-cart-item">
+        <div class="cart-line" role="group" aria-label="Cart line">
+            <img class="mini-cover" alt="" />
+            <div class="line-main">
+                <div class="line-title"></div>
+                <div class="line-author"></div>
+                <div class="line-meta">
+                    <span class="line-price"></span>
+                </div>
+                <div class="line-controls">
+                    <button class="dec" aria-label="Decrease quantity">−</button>
+                    <input class="line-qty" type="number" min="1" value="1" inputmode="numeric" />
+                    <button class="inc" aria-label="Increase quantity">+</button>
+                    <button class="remove danger" data-i18n="remove">Remove</button>
+                </div>
+            </div>
+            <div class="line-total"></div>
+        </div>
+    </template>
+
+    <!-- Screen-reader live region -->
+    <span class="sr-only" id="liveRegion" aria-live="polite"></span>
+</body>
+</html>

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <title>Telemetry Demo — Secure vs Intrusive</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body{font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial;margin:24px;background:#fff;color:#111}
+    header{margin-bottom:18px}
+    .box{border:1px solid #e5e7eb;padding:12px;border-radius:8px;margin-bottom:12px}
+    button{padding:8px 10px;border-radius:6px;border:1px solid #cbd5e1;background:#fff;cursor:pointer}
+    .primary{background:#2563eb;color:#fff;border-color:#2563eb}
+    label{display:block;margin:8px 0 4px}
+    input, textarea{width:100%;padding:8px;border:1px solid #e2e8f0;border-radius:6px}
+    pre{background:#0b1220;color:#d1fae5;padding:12px;border-radius:6px;overflow:auto}
+  </style>
+</head>
+<body>
+  <header><h1>Telemetry Demo — Secure vs Intrusive</h1></header>
+  <section class="box">
+    <p>Formulaire de test (ne pas entrer d'information réelle si vous utilisez la version intrusive)</p>
+    <label for="name">Nom</label>
+    <input id="name" name="name" type="text" placeholder="Alice Example">
+    <label for="email">Email</label>
+    <input id="email" name="email" type="email" placeholder="alice@example.com">
+    <label for="pwd">Mot de passe</label>
+    <input id="pwd" name="pwd" type="password" placeholder="••••••">
+    <label for="notes">Notes</label>
+    <textarea id="notes" name="notes" rows="4"></textarea>
+  </section>
+
+  <section class="box">
+    <button id="startSecure" class="primary">Démarrer secure telemetry (par défaut)</button>
+    <button id="snapshotSecure">Snapshot secure</button>
+    <button id="startIntrusive">Démarrer intrusive telemetry (LABO)</button>
+    <button id="snapshotIntrusive">Snapshot intrusive</button>
+    <button id="hashValue">Hasher valeur email (SHA-256)</button>
+  </section>
+
+  <h3>Résultats</h3>
+  <pre id="out">Aucun résultat.</pre>
+
+  <script type="module">
+    import SecureTelemetry from './api/telemetry.secure.js';
+    import IntrusiveTelemetry from './api/telemetry.intrusive.js';
+    import { sha256Hex } from './api/hash.js';
+
+    const out = document.getElementById('out');
+    const s = SecureTelemetry();
+    const i = IntrusiveTelemetry();
+
+    document.getElementById('startSecure').addEventListener('click', ()=>{
+      s.grantConsent(); s.startAuto(); out.textContent = 'Secure telemetry démarrée (metadata only).';
+    });
+    document.getElementById('snapshotSecure').addEventListener('click', async ()=>{
+      const snap = await s.snapshot();
+      out.textContent = JSON.stringify(snap, null, 2);
+    });
+
+    document.getElementById('startIntrusive').addEventListener('click', ()=>{
+      if (!confirm('DANGER: Intrusive mode enregistre les valeurs des champs. Utilisez seulement en labo. Continuer?')) return;
+      i.grantConsent(); i.start(); out.textContent = 'Intrusive telemetry démarrée (PII capture).';
+    });
+    document.getElementById('snapshotIntrusive').addEventListener('click', async ()=>{
+      const snap = await i.snapshot();
+      out.textContent = JSON.stringify(snap, null, 2);
+    });
+
+    document.getElementById('hashValue').addEventListener('click', async ()=>{
+      const val = document.getElementById('email').value || '';
+      const h = await sha256Hex(val);
+      out.textContent = `sha256(${val}) = ${h}`;
+    });
+  </script>
+</body>
+</html>

@@ -23,7 +23,7 @@ try {
         'Current file': path.basename(__filename),
         'Current dir': path.basename(__dirname),
         'Version': '1.0.0',
-        'Author': 'Mike Beaudet',
+        'Author': 'Mike Beaudet', 
     });
     log.info('Custom logger testing functions');
     log.error('Test error log from custom logger');

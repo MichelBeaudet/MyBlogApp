@@ -299,12 +299,71 @@ server.get('/scan', async (req, res) => {
     });
 });
 
+// Minimal /proxy_fetch: JSON or SSE (progress) using syslib_analyze_url.js
+
+const { analyzeUrl, analyzeUrlStream } = require('./js/syslib_analyze_url');
+
+server.get('/proxy_fetch', async (req, res) => {
+    const raw = (req.query.url || '').trim();
+    const wantsStream = req.query.stream === '1' || (req.get('accept') || '').includes('text/event-stream');
+
+    if (!wantsStream) {
+        // ---------- JSON mode ----------
+        try {
+            const result = await analyzeUrl(raw, {
+                timeoutMs: 20000,
+                userAgent: 'syslib-analyzer/1.0 (+local)'
+            });
+            return res.json(result);
+        } catch (e) {
+            const code = e.code === 'invalid_url' || e.code === 'invalid_scheme' ? 400 : 502;
+            return res.status(code).json({ ok: false, error: e.code || 'analyze_failed', detail: String(e.message || e) });
+        }
+    }
+
+    // ---------- SSE mode ----------
+    // Standard SSE headers (+ anti-buffering hint for Nginx)
+    res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-cache, no-transform');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no');
+    res.flushHeaders?.();
+
+    // Heartbeat so proxies don’t cut the stream
+    const hb = setInterval(() => {
+        try { res.write(': hb\n\n'); } catch (_) { }
+    }, 15000);
+
+    const safeEnd = () => {
+        clearInterval(hb);
+        try { res.end(); } catch (_) { }
+    };
+
+    try {
+        for await (const evt of analyzeUrlStream(raw, {
+            timeoutMs: 20000,
+            userAgent: 'syslib-analyzer/1.0 (+local)'
+        })) {
+            // Each event becomes one SSE message
+            res.write(`data: ${JSON.stringify(evt)}\n\n`);
+        }
+        safeEnd();
+    } catch (e) {
+        res.write(`data: ${JSON.stringify({ type: 'error', error: e.code || 'analyze_failed', detail: String(e.message || e) })}\n\n`);
+        safeEnd();
+    }
+
+    // If client disconnects, just stop writing
+    req.on('close', safeEnd);
+});
+
+
 // ----------------- Remaining server start ----------------------------------
 
 const PORT = process.env.PORT || 8080;   // keep 8080 like your old static server
 server.listen(PORT, () => {
-    log.ok(`Server listening on http://localhost:${PORT}`);
     log.section('Server Initialized and listening...');
+    log.ok(`Server listening on http://localhost:${PORT}`);
 });
 
 module.exports = server;

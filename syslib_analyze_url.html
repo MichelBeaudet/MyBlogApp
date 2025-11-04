@@ -1,0 +1,436 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>URL Analyzer — SSE Progress (Node-only backend)</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <style>
+        /* Minimal, clean styling */
+        :root {
+            --bg: #f7fafc;
+            --card: #fff;
+            --ink: #0f172a;
+            --muted: #64748b;
+            --line: #e6eef6;
+            --accent: #2563eb;
+            --ok: #166534;
+            --warn: #b45309;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial;
+            background: var(--bg);
+            color: var(--ink);
+            margin: 18px;
+        }
+
+        .card {
+            background: var(--card);
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 8px 24px rgba(2,6,23,.06);
+            max-width: 980px;
+            margin: auto;
+        }
+
+        h1 {
+            margin: 0 0 8px;
+            font-size: 20px;
+        }
+
+        p.muted {
+            color: var(--muted);
+            margin: 0 0 10px;
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            color: #334155;
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+
+        input[type="url"] {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid var(--line);
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+            align-items: center;
+        }
+
+        button {
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 0;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .primary {
+            background: var(--accent);
+            color: #fff;
+        }
+
+        .ghost {
+            background: #e2e8f0;
+            color: var(--ink);
+        }
+
+        .status {
+            margin-top: 10px;
+            color: #475569;
+            font-size: 13px;
+        }
+
+        .progress {
+            height: 12px;
+            background: var(--line);
+            border-radius: 999px;
+            overflow: hidden;
+            margin-top: 12px;
+            position: relative;
+        }
+
+        .bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--accent), #22c55e);
+            transition: width 120ms linear;
+        }
+
+        .progtext {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            font-size: 12px;
+            color: var(--muted);
+            margin-top: 6px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 360px;
+            gap: 16px;
+            margin-top: 16px;
+        }
+
+        .panel {
+            background: #fbfdff;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #eef2ff;
+        }
+
+        pre {
+            white-space: pre-wrap;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", monospace;
+            font-size: 13px;
+            color: var(--ink);
+            margin: 0;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 999px;
+            font-size: 12px;
+            background: #eef2ff;
+            color: #1e3a8a;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 8px;
+            font-size: 13px;
+        }
+
+        td, th {
+            padding: 8px 6px;
+            border-bottom: 1px dashed var(--line);
+            text-align: left;
+            vertical-align: top;
+        }
+
+        .ok {
+            color: var(--ok);
+        }
+
+        .warn {
+            color: var(--warn);
+        }
+
+        .small {
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .right {
+            margin-left: auto;
+        }
+    </style>
+
+    <script src="js/sendLog.js"></script>
+</head>
+<body>
+    <script>sendLog('[' + pageName + '] Now starting <body>');</script>
+
+    <div class="card">
+        <h1>URL Analyzer (server-assisted, SSE)</h1>
+        <p class="muted">
+            The browser calls <code>/proxy_fetch</code> on your Node server. The server fetches the page (no CORS limits),
+            streams **byte progress** via SSE, then returns the full JSON (headers + full HTML + checks + score).
+        </p>
+
+        <!-- URL input -->
+        <label for="url">Enter URL to analyze</label>
+        <input id="url" type="url" placeholder="https://www.w3schools.com/html/tryit.asp?filename=tryhtml_id_js" value="https://www.w3schools.com/html/tryit.asp?filename=tryhtml_id_js" />
+
+        <!-- Controls: SSE streaming and one-shot JSON -->
+        <div class="controls">
+            <button id="btnStream" class="primary">Analyze (Live SSE)</button>
+            <button id="btnOnce" class="ghost">Analyze (One-shot JSON)</button>
+            <button id="btnClear" class="ghost">Clear</button>
+            <div class="right small">Node-only backend, no jsdom in the client.</div>
+        </div>
+
+        <!-- Progress bar + status -->
+        <div class="progress">
+            <div id="bar" class="bar"></div>
+            <div id="progtext" class="progtext">Idle.</div>
+        </div>
+        <div id="status" class="status">Idle.</div>
+
+        <!-- Results -->
+        <div class="grid">
+            <div>
+                <div class="panel">
+                    <h3 style="margin:0 0 8px">Summary</h3>
+                    <div id="summary"><span class="small">No results yet.</span></div>
+                    <h3 style="margin:12px 0 8px">Issues / Recommendations</h3>
+                    <div id="issues"><span class="small">—</span></div>
+                    <h4 style="margin:12px 0 6px">Top headers</h4>
+                    <pre id="headers">—</pre>
+                </div>
+            </div>
+            <div>
+                <div class="panel">
+                    <h3 style="margin:0 0 8px">Details</h3>
+                    <table id="checksTable">
+                        <thead><tr><th>Check</th><th>Value</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ---------------------------
+        // Small helpers
+        // ---------------------------
+        const $ = (id) => document.getElementById(id);
+        const urlInput = $('url');
+        const btnStream = $('btnStream');
+        const btnOnce = $('btnOnce');
+        const btnClear = $('btnClear');
+        const bar = $('bar');
+        const progtext = $('progtext');
+        const statusEl = $('status');
+        const summaryEl = $('summary');
+        const issuesEl = $('issues');
+        const checksBody = document.querySelector('#checksTable tbody');
+        const headersPre = $('headers');
+
+        // Update progress bar (0..100), show text under it
+        function setProgress(pct, text) {
+            const clamped = Math.max(0, Math.min(100, pct));
+            bar.style.width = clamped + '%';
+            if (text) progtext.textContent = text;
+        }
+        function setStatus(msg) { statusEl.textContent = msg; }
+        function nice(v) { return (v === undefined || v === null) ? '—' : String(v); }
+
+        // Render the final result object from the server
+        function renderResult(r) {
+            // Summary
+            summaryEl.innerHTML = `
+                <div><strong>Source:</strong> ${r.source} &nbsp; <strong>Status:</strong> ${r.status}</div>
+                <div style="margin-top:6px"><strong>Score:</strong> ${r.score} / 100 — <span class="badge">${r.grade}</span></div>
+                <div class="small" style="margin-top:6px">Scripts: ${r.checks?.scripts_count ?? '—'} &nbsp; Third-party: ${r.checks?.third_party_scripts ?? '—'} &nbsp; SRI missing: ${r.checks?.sri_missing ?? '—'}</div>
+              `;
+
+            // Issues
+            if (Array.isArray(r.issues) && r.issues.length) {
+                issuesEl.innerHTML = '<ul>' + r.issues.map(i => `<li><strong>${i.title}</strong> — ${i.recommendation} <span class="small">(${i.severity})</span></li>`).join('') + '</ul>';
+            } else {
+                issuesEl.innerHTML = `<div class="ok">No major issues detected by these checks.</div>`;
+            }
+
+            // Checks
+            checksBody.innerHTML = '';
+            const addRow = (name, val) => {
+                const tr = document.createElement('tr');
+                const td1 = document.createElement('td'); td1.textContent = name;
+                const td2 = document.createElement('td');
+                if (typeof val === 'boolean') td2.innerHTML = val ? '<span class="ok">true</span>' : '<span class="warn">false</span>';
+                else td2.innerHTML = `<code>${nice(val)}</code>`;
+                tr.appendChild(td1); tr.appendChild(td2);
+                checksBody.appendChild(tr);
+            };
+            const c = r.checks || {};
+            addRow('HTTPS', c.https);
+            addRow('HSTS', c.hsts);
+            addRow('CSP present', c.csp);
+            addRow('X-Content-Type-Options=nosniff', c.x_content_type_options);
+            addRow('X-Frame-Options', c.x_frame_options);
+            addRow('Referrer-Policy', c.referrer_policy);
+            addRow('Permissions-Policy / Feature-Policy', c.permissions_policy);
+            addRow('Mixed content', c.mixed_content);
+            addRow('Forms HTTPS', c.forms_https);
+            addRow('Third-party scripts', c.third_party_scripts);
+            addRow('Scripts missing SRI', c.sri_missing);
+
+            // Headers (selected)
+            headersPre.textContent = JSON.stringify({
+                server: r.headers?.['server'],
+                'content-security-policy': r.headers?.['content-security-policy'],
+                'strict-transport-security': r.headers?.['strict-transport-security'],
+                'x-frame-options': r.headers?.['x-frame-options'],
+                'x-content-type-options': r.headers?.['x-content-type-options'],
+                'referrer-policy': r.headers?.['referrer-policy'],
+                'permissions-policy': r.headers?.['permissions-policy'],
+            }, null, 2);
+        }
+
+        // Normalize URL in the browser; throw if invalid
+        function normalizeUrl(u) {
+            return new URL(u).toString();
+        }
+
+        // ---------------------------
+        // SSE Mode (live progress)
+        // ---------------------------
+        function runSSE() {
+            // Reset UI
+            checksBody.innerHTML = ''; headersPre.textContent = '—'; summaryEl.innerHTML = '<span class="small">Working…</span>'; issuesEl.innerHTML = '';
+            setProgress(1, 'Starting…'); setStatus('Starting…');
+
+            let normalized;
+            try { normalized = normalizeUrl(urlInput.value); }
+            catch { setProgress(0, 'Invalid URL'); setStatus('Invalid URL'); return; }
+
+            // Create the EventSource to stream server events
+            const es = new EventSource(`/proxy_fetch?stream=1&url=${encodeURIComponent(normalized)}`);
+
+            // When the server sends any message, we parse the JSON and update UI
+            es.onmessage = (ev) => {
+                let msg = null;
+                try { msg = JSON.parse(ev.data); } catch { return; }
+
+                switch (msg.type) {
+                    case 'start':
+                        setProgress(5, 'Request queued…'); setStatus('Request queued…');
+                        break;
+                    case 'fetch_start': {
+                        const size = msg.contentLength ? `, content-length: ${msg.contentLength} bytes` : '';
+                        setProgress(10, `Downloading…${size}`); setStatus('Downloading…');
+                        break;
+                    }
+                    case 'fetch_progress': {
+                        // If we know content-length, compute percentage; else show a moving % based on bytes
+                        if (msg.contentLength && msg.contentLength > 0) {
+                            const pct = Math.round((msg.receivedBytes / msg.contentLength) * 70) + 10; // 10→80%
+                            setProgress(Math.min(80, pct), `Downloading… ${msg.receivedBytes} / ${msg.contentLength} bytes`);
+                        } else {
+                            const approx = Math.min(80, 10 + Math.floor(Math.log10(Math.max(10, msg.receivedBytes)) * 15));
+                            setProgress(approx, `Downloading… ${msg.receivedBytes} bytes`);
+                        }
+                        break;
+                    }
+                    case 'fetch_done':
+                        setProgress(85, `Download complete (${msg.receivedBytes} bytes)`);
+                        setStatus(`Download complete, status ${msg.status}`);
+                        break;
+                    case 'parse_start':
+                        setProgress(88, 'Analyzing…'); setStatus('Analyzing…');
+                        break;
+                    case 'parse_done':
+                        setProgress(92, 'Analyzed. Scoring…'); setStatus('Scoring…');
+                        break;
+                    case 'scoring_done':
+                        setProgress(96, `Scored: ${msg.score} / 100 (${msg.grade})`);
+                        break;
+                    case 'done':
+                        setProgress(100, 'Done.');
+                        setStatus('Done.');
+                        renderResult(msg.result);
+                        es.close();
+                        break;
+                    case 'error':
+                        setProgress(0, 'Error'); setStatus(`Error: ${msg.detail || msg.error || 'unknown'}`);
+                        es.close();
+                        break;
+                }
+            };
+
+            es.onerror = () => {
+                setProgress(0, 'SSE error'); setStatus('SSE error (connection closed).');
+                es.close();
+            };
+        }
+
+        // ---------------------------
+        // One-shot JSON Mode
+        // ---------------------------
+        async function runOnce() {
+            // Reset UI
+            checksBody.innerHTML = ''; headersPre.textContent = '—'; summaryEl.innerHTML = '<span class="small">Working…</span>'; issuesEl.innerHTML = '';
+            setProgress(10, 'Contacting server…'); setStatus('Contacting server…');
+
+            let normalized;
+            try { normalized = normalizeUrl(urlInput.value); }
+            catch { setProgress(0, 'Invalid URL'); setStatus('Invalid URL'); return; }
+
+            try {
+                const resp = await fetch(`/proxy_fetch?url=${encodeURIComponent(normalized)}`);
+                const data = await resp.json();
+                if (!data.ok) throw new Error(data.detail || data.error || 'server error');
+                setProgress(100, 'Done.'); setStatus('Done.');
+                renderResult(data);
+            } catch (e) {
+                setProgress(0, 'Failed'); setStatus('Failed: ' + e.message);
+                summaryEl.innerHTML = `<span class="warn">Server error: ${e.message}</span>`;
+                issuesEl.innerHTML = '';
+            }
+        }
+
+        // ---------------------------
+        // Wire up buttons
+        // ---------------------------
+        btnStream.addEventListener('click', runSSE);
+        btnOnce.addEventListener('click', runOnce);
+        btnClear.addEventListener('click', () => {
+            urlInput.value = '';
+            setProgress(0, 'Idle.');
+            setStatus('Idle.');
+            summaryEl.innerHTML = '<span class="small">No results yet.</span>';
+            issuesEl.innerHTML = '';
+            checksBody.innerHTML = '';
+            headersPre.textContent = '—';
+        });
+    </script>
+</body>
+</html>

@@ -2,57 +2,294 @@
 <!-- (Full commented HTML omitted from this header note — see body for full details) -->
 <html lang="fr-CA">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Gérer les billets — posts.json</title>
-  <meta name="description" content="Admin front-end pour gérer posts.json (Michel — Blog).">
-  <style>
-    :root{ --accent:#0d5e85; --bg:#f7f7f8; --card:#ffffff; --text:#111; --muted:#666; --border:#e5e7eb; --radius:10px; --maxw:1200px; }
-    *{ box-sizing:border-box } html,body{ margin:0; padding:0; background:var(--bg); color:var(--text); font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial }
-    a{ color:var(--accent); text-decoration:none } a:hover{ text-decoration:underline }
-    .container{ max-width:var(--maxw); margin:0 auto; padding:1rem }
-    header{ position:sticky; top:0; z-index:10; background:var(--card); border-bottom:1px solid var(--border) }
-    header .bar{ display:flex; flex-wrap:wrap; gap:.5rem; align-items:center; padding:.75rem 0 }
-    .brand{ font-weight:700; font-size:1.1rem; margin-right:auto }
-    .btn{ display:inline-block; border:1px solid var(--border); background:var(--card); padding:.5rem .75rem; border-radius:8px; cursor:pointer }
-    .btn.primary{ background:var(--accent); color:white; border-color:transparent } .btn.danger{ background:#b42318; color:white; border-color:transparent }
-    .btn:disabled{ opacity:.6; cursor:not-allowed }
-    .sep{ width:1px; height:28px; background:var(--border); margin:0 .5rem }
-    main{ display:grid; gap:1rem; grid-template-columns: 1.1fr .9fr; margin-top:1rem } @media (max-width: 1000px){ main{ grid-template-columns:1fr } }
-    .panel{ background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:1rem }
-    .panel h2{ margin:.2rem 0 1rem 0; font-size:1.1rem } .muted{ color:var(--muted); font-size:.9rem }
-    .tools{ display:flex; gap:.5rem; align-items:center; margin-bottom:.75rem; flex-wrap:wrap }
-    .search{ flex:1; min-width:200px } .search input{ width:100%; padding:.5rem .6rem; border:1px solid var(--border); border-radius:8px }
-    .list{ display:grid; gap:.5rem } .row{ display:grid; grid-template-columns: 40px 1.8fr 1.1fr .8fr .6fr auto; gap:.5rem; align-items:center; border:1px solid var(--border); border-radius:8px; padding:.5rem; background:#fff }
-    .row[draggable="true"]{ cursor:grab } .row.dragging{ opacity:.6 } .row .cell{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
-    .row .id{ text-align:right; color:#444 } .row .feat{ text-align:center } .row .actions{ display:flex; gap:.4rem; justify-content:flex-end }
-    .head{ font-weight:600; background:#f4f6f8 }
-    form .grid{ display:grid; gap:.5rem; grid-template-columns: 1fr 1fr } form .grid .full{ grid-column: 1 / -1 }
-    label{ display:block; font-weight:600; margin:.25rem 0 }
-    input[type="text"], input[type="date"], textarea{ width:100%; border:1px solid var(--border); border-radius:8px; padding:.5rem .6rem; font:inherit; background:#fff }
-    textarea{ min-height:120px; resize:vertical }
-    .form-actions{ display:flex; gap:.5rem; align-items:center; margin-top:.75rem }
-    .warning{ color:#b42318; font-weight:600 } .info{ color:#1366d9 }
-    .preview{ margin-top:1rem; border:1px dashed var(--border); border-radius:var(--radius) }
-    .small{ font-size:.9rem; color:var(--muted) }
-    .badge{ display:inline-block; font-size:.8rem; padding:.15rem .4rem; border-radius:6px; border:1px solid var(--border); background:#f7fafc }
-    .featured{ background:#e8f3fb; border-color:#c3e3f8; color:#084b7a }
-  </style>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Gérer les billets — posts.json</title>
+    <meta name="description" content="Admin front-end pour gérer posts.json (Michel — Blog).">
+    <style>
+        :root {
+            --accent: #0d5e85;
+            --bg: #f7f7f8;
+            --card: #ffffff;
+            --text: #111;
+            --muted: #666;
+            --border: #e5e7eb;
+            --radius: 10px;
+            --maxw: 1200px;
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            background: var(--bg);
+            color: var(--text);
+            font: 16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial
+        }
+
+        a {
+            color: var(--accent);
+            text-decoration: none
+        }
+
+            a:hover {
+                text-decoration: underline
+            }
+
+        .container {
+            max-width: var(--maxw);
+            margin: 0 auto;
+            padding: 1rem
+        }
+
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background: var(--card);
+            border-bottom: 1px solid var(--border)
+        }
+
+            header .bar {
+                display: flex;
+                flex-wrap: wrap;
+                gap: .5rem;
+                align-items: center;
+                padding: .75rem 0
+            }
+
+        .brand {
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin-right: auto
+        }
+
+        .btn {
+            display: inline-block;
+            border: 1px solid var(--border);
+            background: var(--card);
+            padding: .5rem .75rem;
+            border-radius: 8px;
+            cursor: pointer
+        }
+
+            .btn.primary {
+                background: var(--accent);
+                color: white;
+                border-color: transparent
+            }
+
+            .btn.danger {
+                background: #b42318;
+                color: white;
+                border-color: transparent
+            }
+
+            .btn:disabled {
+                opacity: .6;
+                cursor: not-allowed
+            }
+
+        .sep {
+            width: 1px;
+            height: 28px;
+            background: var(--border);
+            margin: 0 .5rem
+        }
+
+        main {
+            display: grid;
+            gap: 1rem;
+            grid-template-columns: 1.1fr .9fr;
+            margin-top: 1rem
+        }
+
+        @media (max-width: 1000px) {
+            main {
+                grid-template-columns: 1fr
+            }
+        }
+
+        .panel {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1rem
+        }
+
+            .panel h2 {
+                margin: .2rem 0 1rem 0;
+                font-size: 1.1rem
+            }
+
+        .muted {
+            color: var(--muted);
+            font-size: .9rem
+        }
+
+        .tools {
+            display: flex;
+            gap: .5rem;
+            align-items: center;
+            margin-bottom: .75rem;
+            flex-wrap: wrap
+        }
+
+        .search {
+            flex: 1;
+            min-width: 200px
+        }
+
+            .search input {
+                width: 100%;
+                padding: .5rem .6rem;
+                border: 1px solid var(--border);
+                border-radius: 8px
+            }
+
+        .list {
+            display: grid;
+            gap: .5rem
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: 40px 1.8fr 1.1fr .8fr .6fr auto;
+            gap: .5rem;
+            align-items: center;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: .5rem;
+            background: #fff
+        }
+
+            .row[draggable="true"] {
+                cursor: grab
+            }
+
+            .row.dragging {
+                opacity: .6
+            }
+
+            .row .cell {
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap
+            }
+
+            .row .id {
+                text-align: right;
+                color: #444
+            }
+
+            .row .feat {
+                text-align: center
+            }
+
+            .row .actions {
+                display: flex;
+                gap: .4rem;
+                justify-content: flex-end
+            }
+
+        .head {
+            font-weight: 600;
+            background: #f4f6f8
+        }
+
+        form .grid {
+            display: grid;
+            gap: .5rem;
+            grid-template-columns: 1fr 1fr
+        }
+
+            form .grid .full {
+                grid-column: 1 / -1
+            }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin: .25rem 0
+        }
+
+        input[type="text"], input[type="date"], textarea {
+            width: 100%;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: .5rem .6rem;
+            font: inherit;
+            background: #fff
+        }
+
+        textarea {
+            min-height: 120px;
+            resize: vertical
+        }
+
+        .form-actions {
+            display: flex;
+            gap: .5rem;
+            align-items: center;
+            margin-top: .75rem
+        }
+
+        .warning {
+            color: #b42318;
+            font-weight: 600
+        }
+
+        .info {
+            color: #1366d9
+        }
+
+        .preview {
+            margin-top: 1rem;
+            border: 1px dashed var(--border);
+            border-radius: var(--radius)
+        }
+
+        .small {
+            font-size: .9rem;
+            color: var(--muted)
+        }
+
+        .badge {
+            display: inline-block;
+            font-size: .8rem;
+            padding: .15rem .4rem;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: #f7fafc
+        }
+
+        .featured {
+            background: #e8f3fb;
+            border-color: #c3e3f8;
+            color: #084b7a
+        }
+    </style>
+    <script src="js/sendLog.js"></script>
 </head>
 <body>
-  <header>
-    <div class="container bar" role="toolbar" aria-label="Outils">
-      <div class="brand">Gestion des billets (posts.json)</div>
-      <input id="fileInput" type="file" accept="application/json,.json" style="display:none" />
-      <button id="btnImport" class="btn" title="Importer posts.json depuis votre disque">Importer posts.json</button>
-      <span class="sep" aria-hidden="true"></span>
-      <button id="btnNew" class="btn" title="Créer un nouveau billet">Nouveau</button>
-      <button id="btnDuplicate" class="btn" title="Dupliquer le billet sélectionné" disabled>Dupliquer</button>
-      <button id="btnDelete" class="btn danger" title="Supprimer le billet sélectionné" disabled>Supprimer</button>
-      <span class="sep" aria-hidden="true"></span>
-      <button id="btnExport" class="btn primary" title="Exporter les billets en posts.json" disabled>Exporter posts.json</button>
-    </div>
-  </header>
+    <header>
+        <script>sendLog('[' + pageName + '] Now starting <body>');</script>
+
+        <div class="container bar" role="toolbar" aria-label="Outils">
+            <div class="brand">Gestion des billets (posts.json)</div>
+            <input id="fileInput" type="file" accept="application/json,.json" style="display:none" />
+            <button id="btnImport" class="btn" title="Importer posts.json depuis votre disque">Importer posts.json</button>
+            <span class="sep" aria-hidden="true"></span>
+            <button id="btnNew" class="btn" title="Créer un nouveau billet">Nouveau</button>
+            <button id="btnDuplicate" class="btn" title="Dupliquer le billet sélectionné" disabled>Dupliquer</button>
+            <button id="btnDelete" class="btn danger" title="Supprimer le billet sélectionné" disabled>Supprimer</button>
+            <span class="sep" aria-hidden="true"></span>
+            <button id="btnExport" class="btn primary" title="Exporter les billets en posts.json" disabled>Exporter posts.json</button>
+        </div>
+    </header>
 
   <div class="container">
     <main>

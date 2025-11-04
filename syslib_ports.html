@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Open Ports Viewer (Windows)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+        /* Minimal, clean styling — no external frameworks */
+        :root {
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --ink: #0f172a;
+            --muted: #64748b;
+            --accent: #2563eb;
+            --ok: #16a34a;
+            --warn: #d97706;
+            --radius: 14px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 24px;
+            font: 15px/1.5 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+            color: var(--ink);
+            background: linear-gradient(180deg, #eef2ff 0%, var(--bg) 220px);
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            background: var(--card);
+            border-radius: var(--radius);
+            box-shadow: 0 8px 30px rgba(2,6,23,0.08);
+            padding: 20px 22px;
+        }
+
+        h1 {
+            margin: 6px 0 12px;
+            font-size: 22px;
+        }
+
+        p.desc {
+            color: var(--muted);
+            margin-top: 0;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr auto auto;
+            gap: 12px;
+            align-items: end;
+            margin: 14px 0 10px;
+        }
+
+        label {
+            font-weight: 600;
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            outline: none;
+        }
+
+            input[type="number"]:focus {
+                border-color: var(--accent);
+                box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
+            }
+
+        button {
+            padding: 10px 14px;
+            border: 0;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .primary {
+            background: var(--accent);
+            color: #fff;
+        }
+
+        .ghost {
+            background: #e5e7eb;
+            color: #111827;
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+            margin: 12px 0;
+        }
+
+        .progress-wrap {
+            background: #eef2ff;
+            border-radius: 999px;
+            overflow: hidden;
+            height: 12px;
+            position: relative;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--accent), #22c55e);
+            transition: width 120ms linear;
+        }
+
+        .status {
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 8px;
+        }
+
+        th, td {
+            padding: 10px 8px;
+            border-bottom: 1px solid #e5e7eb;
+            font-size: 14px;
+        }
+
+        th {
+            text-align: left;
+            color: #334155;
+            user-select: none;
+            cursor: pointer;
+            position: sticky;
+            top: 0;
+            background: var(--card);
+        }
+
+        tr:hover {
+            background: #f9fafb;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 12px;
+        }
+
+            .badge.ok {
+                background: #dcfce7;
+                color: #14532d;
+            }
+
+            .badge.warn {
+                background: #fef3c7;
+                color: #7c2d12;
+            }
+
+        .footer {
+            margin-top: 10px;
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .flex {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .mono {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+        }
+    </style>
+    <script src="js/sendLog.js"></script>
+</head>
+<body>
+    <script>sendLog('[' + pageName + '] Now starting <body>');</script>
+    <div class="container">
+        <h1>Open Ports Viewer (Windows)</h1>
+        <p class="desc">
+            Lists active TCP/UDP sockets via <span class="mono">netstat -ano</span> and maps PIDs to process names via
+            <span class="mono">tasklist</span>. Use the max port filter (1–65535). Live progress uses Server-Sent Events (SSE).
+        </p>
+
+        <div class="controls">
+            <div>
+                <label for="maxPort">Max port (1–65535)</label>
+                <input id="maxPort" type="number" min="1" max="65535" value="65535" />
+            </div>
+            <button id="startBtn" class="primary">Start scan</button>
+            <button id="cancelBtn" class="ghost" disabled>Cancel</button>
+        </div>
+
+        <div class="row">
+            <div class="progress-wrap"><div id="bar" class="progress-bar"></div></div>
+            <div class="flex status">
+                <span id="statusIcon" class="badge warn">Idle</span>
+                <span id="statusText">Ready.</span>
+            </div>
+        </div>
+
+        <div class="row">
+            <table id="results">
+                <thead>
+                    <tr>
+                        <!-- Click headers to sort; JS implements a simple sorter -->
+                        <th data-key="localPort">Port ▲▼</th>
+                        <th data-key="protocol">Protocol ▲▼</th>
+                        <th data-key="state">State ▲▼</th>
+                        <th data-key="localAddress">Local Address ▲▼</th>
+                        <th data-key="foreignAddress">Foreign Address ▲▼</th>
+                        <th data-key="foreignPort">Foreign Port ▲▼</th>
+                        <th data-key="pid">PID ▲▼</th>
+                        <th data-key="processName">Process ▲▼</th>
+                    </tr>
+                </thead>
+                <tbody><!-- rows injected here --></tbody>
+            </table>
+        </div>
+
+        <div class="footer">
+            Tip: Click the column headers to sort. Results are filtered by the chosen max port.
+        </div>
+    </div>
+
+    <script>
+        // Front-end logic — pure vanilla JS, many comments for clarity.
+
+        const startBtn = document.getElementById('startBtn');
+        const cancelBtn = document.getElementById('cancelBtn');
+        const maxPortInput = document.getElementById('maxPort');
+
+        const bar = document.getElementById('bar');
+        const statusIcon = document.getElementById('statusIcon');
+        const statusText = document.getElementById('statusText');
+
+        const table = document.getElementById('results');
+        const tbody = table.querySelector('tbody');
+
+        let evtSource = null;          // Holds the active EventSource for SSE
+        let lastPayload = [];          // Keep the latest result set for sorting
+        let currentSort = { key: 'localPort', dir: 'asc' };
+
+        function setStatus(text, mode) {
+            statusText.textContent = text;
+            if (mode === 'running') {
+                statusIcon.textContent = 'Scanning';
+                statusIcon.className = 'badge warn';
+            } else if (mode === 'done') {
+                statusIcon.textContent = 'Done';
+                statusIcon.className = 'badge ok';
+            } else if (mode === 'error') {
+                statusIcon.textContent = 'Error';
+                statusIcon.className = 'badge warn';
+            } else {
+                statusIcon.textContent = 'Idle';
+                statusIcon.className = 'badge warn';
+            }
+        }
+
+        function setProgress(current, total) {
+            const pct = Math.max(0, Math.min(100, Math.round((current / Math.max(1, total)) * 100)));
+            bar.style.width = pct + '%';
+        }
+
+        function clearTable() {
+            tbody.innerHTML = '';
+        }
+
+        function renderRows(rows) {
+            clearTable();
+            for (const r of rows) {
+                const tr = document.createElement('tr');
+
+                const tdPort = document.createElement('td'); tdPort.textContent = r.localPort ?? ''; tr.appendChild(tdPort);
+                const tdProto = document.createElement('td'); tdProto.textContent = r.protocol ?? ''; tr.appendChild(tdProto);
+                const tdState = document.createElement('td'); tdState.textContent = r.state ?? ''; tr.appendChild(tdState);
+                const tdLocal = document.createElement('td'); tdLocal.textContent = r.localAddress ?? ''; tr.appendChild(tdLocal);
+                const tdForeignA = document.createElement('td'); tdForeignA.textContent = r.foreignAddress ?? ''; tr.appendChild(tdForeignA);
+                const tdForeignP = document.createElement('td'); tdForeignP.textContent = r.foreignPort ?? ''; tr.appendChild(tdForeignP);
+                const tdPid = document.createElement('td'); tdPid.textContent = r.pid ?? ''; tr.appendChild(tdPid);
+                const tdProc = document.createElement('td'); tdProc.textContent = r.processName ?? ''; tr.appendChild(tdProc);
+
+                tbody.appendChild(tr);
+            }
+        }
+
+        function sortRows(rows, key, dir) {
+            const copy = rows.slice();
+            copy.sort((a, b) => {
+                const va = a[key]; const vb = b[key];
+                // Numeric vs string sort
+                if (typeof va === 'number' && typeof vb === 'number') {
+                    return dir === 'asc' ? (va - vb) : (vb - va);
+                }
+                const sa = String(va ?? '').toLowerCase();
+                const sb = String(vb ?? '').toLowerCase();
+                if (sa < sb) return dir === 'asc' ? -1 : 1;
+                if (sa > sb) return dir === 'asc' ? 1 : -1;
+                return 0;
+            });
+            return copy;
+        }
+
+        function applySortAndRender() {
+            const rows = sortRows(lastPayload, currentSort.key, currentSort.dir);
+            renderRows(rows);
+        }
+
+        // Make headers clickable to change sorting
+        table.querySelectorAll('th[data-key]').forEach(th => {
+            th.addEventListener('click', () => {
+                const key = th.getAttribute('data-key');
+                if (currentSort.key === key) {
+                    // Toggle direction
+                    currentSort.dir = (currentSort.dir === 'asc') ? 'desc' : 'asc';
+                } else {
+                    currentSort.key = key;
+                    currentSort.dir = 'asc';
+                }
+                applySortAndRender();
+            });
+        });
+
+        function startScan() {
+            // Validate max port (real max is 65535)
+            const max = parseInt(maxPortInput.value, 10);
+            if (Number.isNaN(max) || max < 1 || max > 65535) {
+                alert('Please enter a valid max port between 1 and 65535.');
+                return;
+            }
+
+            // Reset UI
+            setStatus('Starting scan…', 'running');
+            setProgress(0, 100);
+            clearTable();
+            lastPayload = [];
+
+            // Disable/enable buttons
+            startBtn.disabled = true;
+            cancelBtn.disabled = false;
+
+            // Create SSE connection to backend
+            const url = `/scan?max=${encodeURIComponent(max)}`;
+            evtSource = new EventSource(url);
+
+            evtSource.onmessage = (evt) => {
+                // All messages come via the default 'message' event in this simple setup
+                if (!evt.data) return;
+                try {
+                    const msg = JSON.parse(evt.data);
+
+                    if (msg.type === 'start') {
+                        setStatus(`Scanning (max port ${msg.maxPort})…`, 'running');
+                        setProgress(0, 100);
+                    } else if (msg.type === 'progress') {
+                        setStatus(`Parsing netstat… ${msg.current}/${msg.total}`, 'running');
+                        setProgress(msg.current, msg.total);
+                    } else if (msg.type === 'done') {
+                        lastPayload = Array.isArray(msg.data) ? msg.data : [];
+                        setStatus(`Found ${lastPayload.length} entries (filtered by max port).`, 'done');
+                        setProgress(100, 100);
+                        applySortAndRender();
+
+                        // Close stream and reset buttons
+                        evtSource.close();
+                        evtSource = null;
+                        startBtn.disabled = false;
+                        cancelBtn.disabled = true;
+                    } else if (msg.type === 'error') {
+                        setStatus(`Error: ${msg.message}`, 'error');
+                        // Close on error
+                        evtSource.close();
+                        evtSource = null;
+                        startBtn.disabled = false;
+                        cancelBtn.disabled = true;
+                    }
+                } catch (e) {
+                    // If parsing fails, show an error and stop
+                    setStatus(`Error parsing message: ${e}`, 'error');
+                    if (evtSource) { evtSource.close(); evtSource = null; }
+                    startBtn.disabled = false;
+                    cancelBtn.disabled = true;
+                }
+            };
+
+            evtSource.onerror = () => {
+                setStatus('Stream error (SSE).', 'error');
+                if (evtSource) { evtSource.close(); evtSource = null; }
+                startBtn.disabled = false;
+                cancelBtn.disabled = true;
+            };
+        }
+
+        function cancelScan() {
+            if (evtSource) {
+                evtSource.close();
+                evtSource = null;
+            }
+            setStatus('Canceled.', 'error');
+            startBtn.disabled = false;
+            cancelBtn.disabled = true;
+            setProgress(0, 100);
+        }
+
+        startBtn.addEventListener('click', startScan);
+        cancelBtn.addEventListener('click', cancelScan);
+    </script>
+</body>
+
+<script src="js/syslib_ports.js"></script>
+
+</html>

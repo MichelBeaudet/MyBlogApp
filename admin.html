@@ -4,8 +4,13 @@
 <head>
     <meta charset="utf-8" />
     <title>Admin Page</title>
+
+    <!-- Script to send console.log to the server via sendLog.js-->
+    <script src="js/sendLog.js"></script>
 </head>
 <body>
+    <script>sendLog('[' + pageName + '] Now starting <body>');</script>
+
     <h1>Admin Test Page</h1>
     <h1 id="status" ¨></h1>
     <label>
@@ -13,9 +18,6 @@
         <input id="username" type="text" value="MikeBeaudet" />
     </label>
     <button id="test_btn">Test me</button>
-
-    <!-- Script to send console.log to the server via sendLog.js-->
-    <script src="js/sendLog.js"></script>
 
     <script>
         //const username = prompt("Please enter your name:", "Mike Beaudet");

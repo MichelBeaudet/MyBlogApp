@@ -1,69 +1,71 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Michel — Blog</title>
-  <meta name="description" content="Michel, PhD — Nuclear Engineering & Philosophy of Science. Research notes, essays, and updates.">
-  <!-- Basic Open Graph for nicer shares -->
-  <meta property="og:title" content="Michel — Nuclear Engineering | Philosophy of Science">
-  <meta property="og:description" content="Research, essays, and notes by Michel (PhD).">
-  <meta property="og:type" content="website">
-  <meta property="og:image" content="assets/og-cover.png">
-  <link rel="stylesheet" href="styles.css">
-  <script defer src="script.js"></script>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Michel — Blog</title>
+    <meta name="description" content="Michel, PhD — Nuclear Engineering & Philosophy of Science. Research notes, essays, and updates.">
+    <!-- Basic Open Graph for nicer shares -->
+    <meta property="og:title" content="Michel — Nuclear Engineering | Philosophy of Science">
+    <meta property="og:description" content="Research, essays, and notes by Michel (PhD).">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="assets/og-cover.png">
+    <link rel="stylesheet" href="styles.css">
+    <script src="js/sendLog.js"></script>
 </head>
 <body>
-  <header class="site-header">
-    <nav class="container nav">
-      <a class="brand" href="index.html" aria-label="Michel home">
-        <img src="assets/logo.svg" alt="" width="28" height="28" aria-hidden="true">
-        <span>Michel</span>
-      </a>
-      <button class="nav-toggle" aria-expanded="false" aria-controls="primary-nav">☰</button>
-      <ul id="primary-nav" class="nav-links">
-        <li><a href="index.html">Home</a></li>
-        <li><a href="about.html">About</a></li>
-        <li><a href="research.html">Research</a></li>
-        <li><a href="blog.html">Blog</a></li>
-        <li><a href="contact.html">Contact</a></li>
-      </ul>
-    </nav>
-  </header>
+    <script>sendLog('[' + pageName + '] Now starting <body>');</script>
 
-  <main class="container prose">
-    <h1>Contact</h1>
-    <p>Best way to reach me is via email.</p>
-    <ul>
-      <li>Email: <a href="mailto:michelbeaudet2010@live.ca">michelbeaudet2010@live.ca</a></li>
-    </ul>
-    <p>For press or speaking, include context, desired dates, and a short brief.</p>
-  </main>
-  <footer class="site-footer">
-    <div class="container footer-grid">
-      <section>
-        <h3>Credentials</h3>
-        <p>PhD, Nuclear Engineering • Researcher, Philosophy of Science</p>
-      </section>
-      <section>
-        <h3>Elsewhere</h3>
-        <ul class="social">
-            <li><a rel="me" href="https://www.linkedin.com/in/michel-beaudet-47918756/?lipi=urn%3Ali%3Apage%3Ad_flagship3_feed%3BVnl80CU1Sv%2BIsepNN%2Bckcg%3D%3D" aria-label="Michel on LinkedIn">LinkedIn</a></li>
-            <li><a rel="me" href="https://github.com/MichelBeaudet" aria-label="Michel on GitHub">GitHub</a></li>
+    <header class="site-header">
+        <nav class="container nav">
+            <a class="brand" href="index.html" aria-label="Michel home">
+                <img src="assets/logo.svg" alt="" width="28" height="28" aria-hidden="true">
+                <span>Michel</span>
+            </a>
+            <button class="nav-toggle" aria-expanded="false" aria-controls="primary-nav">☰</button>
+            <ul id="primary-nav" class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="about.html">About</a></li>
+                <li><a href="research.html">Research</a></li>
+                <li><a href="blog.html">Blog</a></li>
+                <li><a href="contact.html">Contact</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="container prose">
+        <h1>Contact</h1>
+        <p>Best way to reach me is via email.</p>
+        <ul>
+            <li>Email: <a href="mailto:michelbeaudet2010@live.ca">michelbeaudet2010@live.ca</a></li>
         </ul>
-      </section>
-      <section>
-        <h3>Newsletter</h3>
-        <!-- This form is a placeholder; wire to your provider later -->
-        <form class="newsletter" id="newsletter-form" data-enhanced="true">
-          <label for="email">Get updates (email):</label>
-          <input id="email" name="email" type="email" placeholder="you@example.com" required>
-          <button type="submit">Subscribe</button>
-          <p class="note">We’ll never share your email. (Demo only.)</p>
-        </form>
-      </section>
-    </div>
-    <p class="copyright">© <span id="year"></span> Michel. All rights reserved.</p>
-  </footer>
+        <p>For press or speaking, include context, desired dates, and a short brief.</p>
+    </main>
+    <footer class="site-footer">
+        <div class="container footer-grid">
+            <section>
+                <h3>Credentials</h3>
+                <p>PhD, Nuclear Engineering • Researcher, Philosophy of Science</p>
+            </section>
+            <section>
+                <h3>Elsewhere</h3>
+                <ul class="social">
+                    <li><a rel="me" href="https://www.linkedin.com/in/michel-beaudet-47918756/?lipi=urn%3Ali%3Apage%3Ad_flagship3_feed%3BVnl80CU1Sv%2BIsepNN%2Bckcg%3D%3D" aria-label="Michel on LinkedIn">LinkedIn</a></li>
+                    <li><a rel="me" href="https://github.com/MichelBeaudet" aria-label="Michel on GitHub">GitHub</a></li>
+                </ul>
+            </section>
+            <section>
+                <h3>Newsletter</h3>
+                <!-- This form is a placeholder; wire to your provider later -->
+                <form class="newsletter" id="newsletter-form" data-enhanced="true">
+                    <label for="email">Get updates (email):</label>
+                    <input id="email" name="email" type="email" placeholder="you@example.com" required>
+                    <button type="submit">Subscribe</button>
+                    <p class="note">We’ll never share your email. (Demo only.)</p>
+                </form>
+            </section>
+        </div>
+        <p class="copyright">© <span id="year"></span> Michel. All rights reserved.</p>
+    </footer>
 </body>
 </html>

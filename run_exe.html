@@ -5,9 +5,8 @@
     <script src="js/sendLog.js"></script>
 </head>
 <body>
-    <script>
-        sendLog('Now Starting <body> of ' + pageName);
-    </script>
+    <script>sendLog('[' + pageName + '] Now starting <body>');</script>
+
     <h2>Run EXE</h2>
     <button onclick="run_exe_href()">run_exe_href</button>
     <button id="run_exe_fetch">run_exe_fetch</button>
@@ -19,10 +18,10 @@
         function run_exe_href() {
             // Attempt to open the file/URI
             // Note: Most browsers will block this action for security reasons
-            sendLog("Attempting to run the EXE via href...");
+            sendLog('[' + pageName + '] Attempting to run the EXE via href...');
             alert("If nothing happens, your browser likely blocked the attempt to run the EXE for security reasons.");
             window.location.href = "file:///C:/Users/miche/OneDrive/My%20Projects/VS%20Studio%20Projects/MyRainMatrix/dist/Matrix_Rain/Matrix_Rain.exe";
-            sendLog("If the EXE did not run, your browser likely blocked it for security reasons.");
+            sendLog('[' + pageName + '] If the EXE did not run, your browser likely blocked it for security reasons.');
         }
     </script>
 
@@ -30,7 +29,7 @@
         //Run via fetch to backend and server will run Matrix_Rain.exe
         document.getElementById('run_exe_fetch').addEventListener('click', async () => {
             try {
-                sendLog("Attempting to run the EXE via fetch /run_exe...");
+                sendLog('[' + pageName + '] Attempting to run the EXE via fetch /run_exe...');
                 const r = await fetch('../run_exe', { method: 'POST' });
                 const j = await r.json();
                 document.getElementById('out').textContent = JSON.stringify(j, null, 2);

@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8" />
+    <title>Self-contained Hacker Console — Compact Output</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <style>
+        :root {
+            --bg: #06080b;
+            --fg: #e8ecef;
+            --muted: #7b8a8d;
+        }
+
+        html, body {
+            height: 100%;
+            margin: 0;
+            background: var(--bg);
+            color: var(--fg);
+            font-family: Consolas, Menlo, Monaco, monospace;
+        }
+
+        .container {
+            max-width: 980px;
+            margin: 28px auto;
+            padding: 12px;
+        }
+
+        .hdr {
+            color: #9aff9d;
+            margin: 0 0 10px 0;
+        }
+
+        .screen {
+            background: linear-gradient(180deg,#0008,#0b0f1388);
+            border: 1px solid #10161c;
+            border-radius: 8px;
+            padding: 14px;
+            min-height: 440px;
+            box-shadow: 0 10px 30px #0008;
+            overflow: auto;
+        }
+
+        pre {
+            margin: 0;
+            white-space: pre;
+            font-size: 14px;
+            line-height: 1; /* ← no interline */
+        }
+
+        .controls {
+            margin-top: 12px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+            .controls input, .controls button, .controls select {
+                padding: 6px 10px;
+                border-radius: 6px;
+                border: none;
+                background: #1f262e;
+                color: #e8e8e8;
+            }
+
+                .controls input[type="number"] {
+                    width: 100px;
+                    background: #0f1419;
+                }
+
+                .controls button:disabled {
+                    opacity: .5;
+                    cursor: default;
+                }
+
+        .status {
+            font-size: 12px;
+            color: var(--muted);
+            margin-left: 6px;
+        }
+
+        .mode-note {
+            font-size: 13px;
+            color: var(--muted);
+            margin-top: 8px;
+        }
+
+        .footer {
+            margin-top: 10px;
+            color: var(--muted);
+            font-size: 12px;
+        }
+    </style>
+    <script src="js/sendLog.js"></script>
+</head>
+<body>
+    <script>sendLog('[' + pageName + '] Now starting <body>');</script>
+
+    <div class="container">
+        <h2 class="hdr">>>> Self-contained Hacker Console</h2>
+        <div id="screen" class="screen"><pre id="out">Prêt. Choisis un mode, clique "Start" ou "One".</pre></div>
+
+        <div class="controls">
+            <label>
+                Mode
+                <select id="mode">
+                    <option value="simulate">Simulate (JS only)</option>
+                    <option value="pyodide">Pyodide (real Python in browser)</option>
+                </select>
+            </label>
+
+            <label>
+                Interval (ms)
+                <input id="ms" type="number" min="100" step="100" value="900" />
+            </label>
+
+            <button id="start">Start</button>
+            <button id="stop" disabled>Stop</button>
+            <button id="one">One</button>
+            <button id="clear">Clear</button>
+            <span id="status" class="status">Statut: prêt</span>
+        </div>
+
+        <div class="mode-note" id="modeNote">Mode simulate active — aucune dépendance externe.</div>
+        <div class="footer">Note: Pyodide charge ~10–30 MB du CDN à la première utilisation.</div>
+    </div>
+
+    <script>
+        const out = document.getElementById('out');
+        const statusEl = document.getElementById('status');
+        const msInput = document.getElementById('ms');
+        const startBtn = document.getElementById('start');
+        const stopBtn = document.getElementById('stop');
+        const oneBtn = document.getElementById('one');
+        const clearBtn = document.getElementById('clear');
+        const modeSelect = document.getElementById('mode');
+        const modeNote = document.getElementById('modeNote');
+
+        const PALETTE = ["#39ff14", "#00ffff", "#ffd166", "#ff6b6b", "#a0e7e5", "#b9f18a", "#b388ff", "#64ffda"];
+        let timer = null, pyodide = null, pyReady = false;
+
+        const STATIC_SNIPPETS = [
+            `def fib(n: int):
+    a, b = 0, 1
+    for _ in range(n):
+        yield a
+        a, b = b, a + b`,
+
+            `class Stack:
+    def __init__(self):
+        self._data = []
+    def push(self, x): self._data.append(x)
+    def pop(self): return self._data.pop()
+    def peek(self): return self._data[-1] if self._data else None
+    def __len__(self): return len(self._data)`,
+
+            `from dataclasses import dataclass
+@dataclass
+class Point:
+    x: float
+    y: float
+    def norm2(self) -> float:
+        return self.x * self.x + self.y * self.y`,
+
+            `def factorial(n: int) -> int:
+    return 1 if n <= 1 else n * factorial(n - 1)`,
+
+            `import asyncio
+async def fetch_data(url: str):
+    await asyncio.sleep(0.2)
+    return {"url": url, "status": 200}`,
+
+            `def primes(limit: int):
+    sieve = [True] * (limit + 1)
+    for p in range(2, int(limit**0.5) + 1):
+        if sieve[p]:
+            sieve[p*p : limit+1 : p] = [False] * len(range(p*p, limit+1, p))
+    return [x for x in range(2, limit+1) if sieve[x]]`,
+
+            `from functools import lru_cache
+@lru_cache(maxsize=None)
+def fib_cached(n):
+    return n if n < 2 else fib_cached(n-1) + fib_cached(n-2)`,
+
+            `import random
+matrix = [[random.randint(0, 9) for _ in range(4)] for _ in range(4)]`,
+
+            `def flatten(xs):
+    for x in xs:
+        if isinstance(x, (list, tuple)):
+            yield from flatten(x)
+        else:
+            yield x`,
+
+            `class Vector(list):
+    def __add__(self, other):
+        return Vector(a + b for a, b in zip(self, other))
+    def dot(self, other):
+        return sum(a*b for a, b in zip(self, other))`,
+
+            `import math
+def rotate(point, angle):
+    x, y = point
+    rad = math.radians(angle)
+    return (x*math.cos(rad) - y*math.sin(rad),
+            x*math.sin(rad) + y*math.cos(rad))`,
+
+            `def merge_dicts(*dicts):
+    res = {}
+    for d in dicts: res.update(d)
+    return res`,
+
+            `def mean(xs):
+    return sum(xs) / len(xs) if xs else float('nan')`,
+
+            `import re
+def extract_words(text):
+    return re.findall(r"[A-Za-z']+", text)`,
+
+            `def countdown(n):
+    while n > 0:
+        yield n
+        n -= 1`,
+
+            `import itertools
+def window(seq, n=2):
+    iters = itertools.tee(seq, n)
+    for i, it in enumerate(iters):
+        for _ in range(i): next(it, None)
+    return zip(*iters)`,
+
+            `def transpose(matrix):
+    return list(map(list, zip(*matrix)))`,
+
+            `from collections import Counter
+def most_common(items):
+    return Counter(items).most_common(3)`,
+
+            `import time
+def benchmark(fn, *args):
+    start = time.perf_counter()
+    res = fn(*args)
+    return res, round(time.perf_counter() - start, 6)`,
+
+            `def quicksort(xs):
+    if len(xs) <= 1: return xs
+    pivot = xs[len(xs)//2]
+    left = [x for x in xs if x < pivot]
+    mid = [x for x in xs if x == pivot]
+    right = [x for x in xs if x > pivot]
+    return quicksort(left) + mid + quicksort(right)`,
+
+            `class Person:
+    def __init__(self, name, age):
+        self.name, self.age = name, age
+    def birthday(self):
+        self.age += 1
+    def __repr__(self):
+        return f"<{self.name}, {self.age}>"`,
+
+            `import statistics
+def analyze(values):
+    return {
+        "mean": statistics.mean(values),
+        "median": statistics.median(values),
+        "stdev": round(statistics.stdev(values), 3)
+    }`,
+
+            `def powerset(iterable):
+    from itertools import chain, combinations
+    s = list(iterable)
+    return chain.from_iterable(combinations(s, r) for r in range(len(s)+1))`,
+
+            `def safe_div(x, y):
+    try: return x / y
+    except ZeroDivisionError: return float('inf')`,
+
+            `import os
+def list_files(path='.'):
+    return [f for f in os.listdir(path) if os.path.isfile(f)]`,
+
+            `from typing import Generator
+def infinite_counter(start: int = 0) -> Generator[int, None, None]:
+    while True:
+        yield start
+        start += 1`
+        ];
+
+
+
+
+        function colorizeBlock(text) {
+            return text
+                .split('\n')
+                .filter(line => !line.trim().startsWith('#') && line.trim() !== '')
+                .map(line => {
+                    const c = PALETTE[Math.floor(Math.random() * PALETTE.length)];
+                    const safe = line.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                    return `<span style="color:${c}">${safe}</span>`;
+                })
+                .join('\n');
+        }
+
+        function getSimulatedSnippet() {
+            return STATIC_SNIPPETS[Math.floor(Math.random() * STATIC_SNIPPETS.length)];
+        }
+
+        async function ensurePyodide() {
+            if (pyReady) return;
+            if (pyodide) return;
+            statusEl.textContent = "Statut: chargement Pyodide…";
+            await new Promise((resolve, reject) => {
+                const s = document.createElement('script');
+                s.src = "https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js";
+                s.onload = resolve;
+                s.onerror = () => reject(new Error("Échec chargement Pyodide"));
+                document.head.appendChild(s);
+            });
+            pyodide = await loadPyodide({ indexURL: "https://cdn.jsdelivr.net/pyodide/v0.26.2/full/" });
+            const py = `
+import random, json
+SNIPPETS = ${JSON.stringify(STATIC_SNIPPETS)}
+def next_snippet():
+        return {"code": random.choice(SNIPPETS)}
+`;
+            await pyodide.runPythonAsync(py);
+            pyReady = true;
+            statusEl.textContent = "Statut: Pyodide prêt";
+        }
+
+        async function getPyodideSnippet() {
+            await ensurePyodide();
+            const s = await pyodide.runPythonAsync("import json; json.dumps(next_snippet())");
+            return JSON.parse(s).code || "";
+        }
+
+        async function fetchSnippet() {
+            if (modeSelect.value === 'simulate') return getSimulatedSnippet();
+            try { return await getPyodideSnippet(); }
+            catch (e) { return ''; }
+        }
+
+        async function showOne() {
+            statusEl.textContent = "Statut: fetching…";
+            try {
+                const code = await fetchSnippet();
+                out.insertAdjacentHTML("beforeend", colorizeBlock(code) + "\n");
+                out.parentElement.scrollTop = out.parentElement.scrollHeight;
+                statusEl.textContent = "Statut: OK";
+            } catch (e) {
+                out.insertAdjacentHTML("beforeend", `<span style='color:#ff6b6b'>[erreur] ${e}</span>\n`);
+                statusEl.textContent = "Statut: erreur";
+            }
+        }
+
+        function startLoop() {
+            if (timer) return;
+            startBtn.disabled = true; stopBtn.disabled = false; msInput.disabled = true; modeSelect.disabled = true;
+            showOne();
+            timer = setInterval(showOne, Math.max(100, Number(msInput.value) || 900));
+            statusEl.textContent = "Statut: en cours";
+        }
+
+        function stopLoop() {
+            if (!timer) return;
+            clearInterval(timer); timer = null;
+            startBtn.disabled = false; stopBtn.disabled = true; msInput.disabled = false; modeSelect.disabled = false;
+            statusEl.textContent = "Statut: arrêté";
+        }
+
+        startBtn.addEventListener('click', startLoop);
+        stopBtn.addEventListener('click', stopLoop);
+        oneBtn.addEventListener('click', showOne);
+        clearBtn.addEventListener('click', () => { out.textContent = ''; statusEl.textContent = 'Statut: prêt'; });
+        modeSelect.addEventListener('change', () => {
+            modeNote.textContent = modeSelect.value === 'simulate'
+                ? "Mode simulate active — aucune dépendance externe."
+                : "Mode pyodide sélectionné — Pyodide sera chargé à la première requête.";
+        });
+    </script>
+</body>
+</html>

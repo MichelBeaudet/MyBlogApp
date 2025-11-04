@@ -1,4 +1,4 @@
-Sun Nov  2 19:42:48 2025 : Opening $LogFile.txt for logging.!
-Sun Nov  2 19:42:48 2025 : Python version is : 3.13.9 (tags/v3.13.9:8183fa5, Oct 14 2025, 14:09:13) [MSC v.1944 64 bit (AMD64)]
-Sun Nov  2 19:42:48 2025 : Importing MyNeurons_Applications.py Version 6.0
-Sun Nov  2 19:42:48 2025 : Importing Utility_library.py Version 2.0
+Tue Nov  4 15:12:01 2025 : Opening $LogFile.txt for logging.!
+Tue Nov  4 15:12:01 2025 : Python version is : 3.13.7 (tags/v3.13.7:bcee1c3, Aug 14 2025, 14:15:11) [MSC v.1944 64 bit (AMD64)]
+Tue Nov  4 15:12:01 2025 : Importing MyNeurons_Applications.py Version 6.0
+Tue Nov  4 15:12:01 2025 : Importing Utility_library.py Version 2.0

@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8" />
+    <title>Hacker Console — JS → Python → JSON → Web</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+        :root {
+            --bg: #06080b;
+            --fg: #e8ecef;
+            --panel: #0b0f13;
+        }
+
+        html, body {
+            height: 100%;
+            margin: 0;
+            background: var(--bg);
+            color: var(--fg);
+            font-family: Consolas, Menlo, Monaco, monospace;
+        }
+
+        .wrap {
+            max-width: 980px;
+            margin: 28px auto;
+            padding: 12px;
+        }
+
+        .screen {
+            background: linear-gradient(180deg,#0008,#0b0f1388);
+            border: 1px solid #10161c;
+            border-radius: 8px;
+            min-height: 420px;
+            padding: 14px;
+            box-shadow: 0 10px 30px #0008;
+            overflow: auto;
+        }
+
+        pre {
+            margin: 0;
+            white-space: pre; /* preserve newlines and spaces exactly */
+            word-break: break-word;
+            font-size: 14px;
+            font-family: inherit;
+            line-height: 1.18; /* tight lines, no extra gaps */
+        }
+
+            pre.snippet {
+                padding: 10px 12px;
+                border-radius: 6px;
+                background: rgba(255,255,255,0.02);
+                margin-top: 8px;
+                box-shadow: 0 4px 10px rgba(0,0,0,0.45) inset;
+                overflow-x: auto;
+            }
+
+        .controls {
+            margin-top: 10px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+            .controls input {
+                width: 110px;
+                padding: 6px;
+                border-radius: 6px;
+                border: none;
+                background: #0f1419;
+                color: #d8d8d8;
+            }
+
+            .controls button {
+                padding: 6px 10px;
+                border-radius: 6px;
+                border: none;
+                background: #1e242b;
+                color: #e8e8e8;
+                cursor: pointer;
+            }
+
+        .hdr {
+            color: #9aff9d;
+            margin: 0 0 8px 0;
+            opacity: .95;
+        }
+
+        small.status {
+            display: block;
+            margin-top: 8px;
+            color: #7b8a8d;
+        }
+
+        /* make long code lines scroll horizontally inside the pre */
+        pre.snippet {
+            white-space: pre;
+        }
+
+        /* Clear button style */
+        button:disabled {
+            opacity: 0.45;
+            cursor: default;
+        }
+    </style>
+
+    <!-- Keep your sendLog utility; it may define sendLog and pageName -->
+    <script src="js/sendLog.js"></script>
+</head>
+<body>
+    <script>
+      // safe sendLog usage (guard if sendLog missing)
+      try { if (typeof pageName === 'undefined') window.pageName = location.pathname.split('/').pop() || 'hacker.html'; } catch {}
+      try { if (typeof sendLog === 'function') sendLog('[' + (window.pageName||'') + '] Now starting <body>'); } catch {}
+    </script>
+
+    <div class="wrap">
+        <h3 class="hdr">>>> JS (server) → Python → JSON → Browser</h3>
+
+        <div id="screen" class="screen">
+            <pre id="out">Clique "Start" ou "One".</pre>
+        </div>
+
+        <div class="controls">
+            <label>
+                Interval (ms)
+                <input id="ms" type="number" min="100" step="100" value="900">
+            </label>
+            <button id="start">Start</button>
+            <button id="stop" disabled>Stop</button>
+            <button id="one">One</button>
+            <button id="clear">Clear</button>
+            <small class="status" id="status">Statut: prêt</small>
+        </div>
+    </div>
+
+    <script>
+    (function () {
+        // Elements
+        const screenEl = document.getElementById('screen');
+        const outInitial = document.getElementById('out');
+        const statusEl = document.getElementById('status');
+        const msInput = document.getElementById('ms');
+        const startBtn = document.getElementById('start');
+        const stopBtn = document.getElementById('stop');
+        const oneBtn = document.getElementById('one');
+        const clearBtn = document.getElementById('clear');
+
+        // Palette for block colors (bright/contrast)
+        const PALETTE = ["#39ff14", "#00ffff", "#ffd166", "#ff6b6b", "#a0e7e5", "#b9f18a", "#b388ff", "#64ffda"];
+        let timer = null;
+
+        // Utility: get a random color from palette
+        function randomColor() {
+            return PALETTE[Math.floor(Math.random() * PALETTE.length)];
+        }
+
+        // Append a code block as a new <pre class="snippet"> (preserves indentation/newlines)
+        function appendSnippetBlock(text, opts = {}) {
+            // On first real snippet remove initial message
+            if (outInitial && outInitial.parentNode) {
+                outInitial.parentNode.removeChild(outInitial);
+            }
+
+            const pre = document.createElement('pre');
+            pre.className = 'snippet';
+            pre.style.color = opts.color || randomColor();
+            // Use textContent to preserve raw newlines/spaces safely
+            pre.textContent = String(text);
+            screenEl.appendChild(pre);
+
+            // Auto-scroll to bottom
+            screenEl.scrollTop = screenEl.scrollHeight;
+        }
+
+        // Display a short error/info block (reuses append logic but with gray/red color)
+        function appendInfo(text, color = '#ff6b6b') {
+            appendSnippetBlock(text, { color });
+        }
+
+        // Fire-and-forget sendLog wrapper (guarded)
+        function safeSendLog(msg) {
+            try { if (typeof sendLog === 'function') sendLog(msg); } catch (e) { /* ignore */ }
+        }
+
+        // Fetch snippet from server. Expects JSON { "code": "..." } or fallback to any JSON
+        async function fetchSnippet() {
+            safeSendLog("Fetching Python snippet /run_python_hacker_snippet");
+            try {
+                const res = await fetch('/run_python_hacker_snippet', { method: 'POST' });
+                if (!res.ok) {
+                    appendInfo(`HTTP ${res.status} ${res.statusText}`, '#ff8b8b');
+                    return;
+                }
+                const j = await res.json();
+                if (j && typeof j.code === 'string') {
+                    appendSnippetBlock(j.code);
+                } else {
+                    // pretty print full JSON fallback
+                    appendSnippetBlock(JSON.stringify(j, null, 2));
+                }
+            } catch (err) {
+                appendInfo('Fetch error: ' + String(err), '#ff8b6b');
+            }
+        }
+
+        // Control handlers
+        function startLoop() {
+            safeSendLog("Starting fetch loop");
+            if (timer) return;
+            startBtn.disabled = true;
+            stopBtn.disabled = false;
+            msInput.disabled = true;
+            fetchSnippet();
+            timer = setInterval(fetchSnippet, Math.max(100, Number(msInput.value) || 900));
+            statusEl.textContent = "Statut: en cours";
+        }
+
+        function stopLoop() {
+            safeSendLog("Stopping fetch loop");
+            if (!timer) return;
+            clearInterval(timer);
+            timer = null;
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+            msInput.disabled = false;
+            statusEl.textContent = "Statut: arrêté";
+        }
+
+        function clearScreen() {
+            safeSendLog("Clearing screen");
+            // restore initial message
+            screenEl.innerHTML = '';
+            const pre = document.createElement('pre');
+            pre.id = 'out';
+            pre.textContent = 'Clique "Start" ou "One".';
+            screenEl.appendChild(pre);
+            statusEl.textContent = "Statut: prêt";
+        }
+
+        // Wire events
+        startBtn.addEventListener('click', startLoop);
+        stopBtn.addEventListener('click', stopLoop);
+        oneBtn.addEventListener('click', fetchSnippet);
+        clearBtn.addEventListener('click', clearScreen);
+
+        // Optional: keyboard shortcuts
+        window.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === ' ') { // Ctrl+Space => one
+                e.preventDefault();
+                fetchSnippet();
+            }
+        });
+
+        // initial log
+        safeSendLog('Hacker console loaded');
+
+    })();
+    </script>
+</body>
+</html>

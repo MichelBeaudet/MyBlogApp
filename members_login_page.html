@@ -7,9 +7,8 @@
     <script src="js/sendLog.js"></script>
 </head>
 <body>
-    <script>
-        sendLog('Now Starting <body> of ' + pageName);
-    </script>
+    <script>sendLog('[' + pageName + '] Now starting <body>');</script>
+
     <h1>Member's Login Page</h1>
     <h1 id="status"></h1>
     <label>username <input id="username" type="text" value="MikeBeaudet" /></label>
@@ -18,7 +17,7 @@
     <button id="loginButton">Login</button>
 
     <script>
-        sendLog("Member's Login page loaded");
+        sendLog('[' + pageName + '] Members Login page loaded');
         const username = document.getElementById("username");
         const password = document.getElementById("password");
         const statusEl = document.getElementById("status");
@@ -28,13 +27,14 @@
             const user = username.value.trim();
             const pass = password.value.trim();
 
-            sendLog(`Attempting login with, ${user}, ${pass}`);
+            sendLog(`[` + pageName + `] Attempting login with , ${user}, ${pass}`);
 
             if (user === "MikeBeaudet" && pass === "12345") {
                 localStorage.setItem("app_user", user);            // <-- save
                 window.location.href = "members_page.html?user=" + encodeURIComponent(user); statusEl.textContent = "Login successful!";
                 statusEl.style.color = "green";
-                setTimeout(() => window.location.href = "members_page.html", 300); // go to index
+                setTimeout(() =>
+                    window.location.href = "members_page.html", 300); // go to index
             } else {
                 statusEl.textContent = "Login failed. Please try again.";
                 statusEl.style.color = "red";
@@ -43,6 +43,7 @@
     </script>
 
     <br /><br />
+    <h2><a href="index.html">Home</a></h2>
     <h2><a href="syslib_page.html">syslib_page</a></h2>
 
 </body>

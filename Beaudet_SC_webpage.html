@@ -17,7 +17,7 @@
         }
 
         body {
-            background-image: url('Beaudet Services Conseils.png');
+            background-image: url('BSC_logo.png');
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
@@ -43,16 +43,16 @@
     <script src="js/sendLog.js"></script>
 </head>
 <body>
-    <script>
-        sendLog('Now Starting <body> of ' + pageName);
-    </script>
-    <img class="logo" src="Beaudet Services Conseils.png" alt="Description" />
+    <script>sendLog('[' + pageName + '] Now starting <body>');</script>
+
+    <img class="logo" src="BSC_logo.png" alt="Description" />
 
     <nav class="container-fluid">
         <ul>
             <li><strong>Beaudet Services Conseils</strong></li>
         </ul>
         <ul>
+            <li><a href="index.html">Home</a></li>
             <li><a href="#about">About</a></li>
             <li><a href="#services">Our Services</a></li>
             <li><a href="#contact" role="button">Contact Us</a></li>
@@ -68,7 +68,7 @@
                 </hgroup>
                 <p>Beaudet Services Conseils is a professional consulting firm dedicated to delivering tailored strategies and solutions to clients across various sectors. Our commitment to quality and innovation drives our success.</p>
                 <figure>
-                    <img src="Beaudet Services Conseils.pngE" alt="City background" />
+                    <img class="logo" src="BSC_logo.png" alt="Description" />
                     <figcaption><a href="#" target="_blank">Background image placeholder</a></figcaption>
                 </figure>
             </section>

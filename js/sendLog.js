@@ -25,7 +25,7 @@ const pageName = window.location.pathname.split("/").pop() || "index.html";
 try {
     if (document.currentScript?.src) {
         const parts = document.currentScript.src.split("/");
-        sendLog(`[${pageName}]: running ${parts.pop()}`);
+     //   sendLog(`[${pageName}]: running ${parts.pop()}`);
     } else {
         sendLog(`page ${pageName}: running no script`);
     }

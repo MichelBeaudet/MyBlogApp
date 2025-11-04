@@ -5,28 +5,32 @@
     <title>Navigator Properties Page</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <style>
-       h1 {
+        h1 {
             font-weight: 900;
             color: midnightblue;
         }
+
         #button_style {
             display: flex; /* enable flexbox */
             align-items: center; /* vertically align items */
             gap: 1rem; /* space between h2 and button */
             font-weight: 900;
         }
-        /* make the h4 blue */
-        #button_style h4 {
-            color: blue;
-        }
+            /* make the h4 blue */
+            #button_style h4 {
+                color: blue;
+            }
     </style>
+    <script src="js/sendLog.js"></script>
 </head>
 <body>
+    <script>sendLog('[' + pageName + '] Now starting <body>');</script>
+
     <header>
         <h1>Navigator Properties Page</h1>
     </header>
 
-    <main id="content">        
+    <main id="content">
         <script>
             // This is the script to see errors in the web page.
             window.onerror = function (message, source, lineno, colno, error) {

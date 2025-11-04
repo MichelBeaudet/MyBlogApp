@@ -1,11 +1,10 @@
-// public/navigator_props.js
+// /navigator_props.js
 
 const content = document.getElementById('content');
 const paragraph1 = document.getElementById('paragraph1');
 const paragraph2 = document.getElementById('paragraph2');
 
 // Get the HTML file name (current page)
-const pageName = window.location.pathname.split("/").pop() || "index.html";
 console.log("*** Loaded from HTML page:", pageName);
 
 // Get the current script file name

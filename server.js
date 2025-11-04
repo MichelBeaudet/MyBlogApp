@@ -1,21 +1,28 @@
-// server.js — Express entrypoint (merges old server.js logic)
-// Goal: zero friction in VS2022 + clear logs + same endpoints you had.
+// server.js
+// Recreated server with all previous endpoints and added ports scan endpoints.
+// - Serves /public static files
+// - Existing endpoints preserved (clientlog, admin, run_python, run_exe, etc.)
+// - New: GET /scan_ports?max=65535  -> returns JSON list (one-shot)
+// - New: GET /scan?max=65535        -> Server-Sent Events (progress + final data)
+//
+// Usage:
+//   npm i express
+//   node server.js
+//
+// Notes:
+//   - This file expects js/syslib_ports.js to export { scanPorts, splitHostPort }
+//   - SSE endpoint uses heartbeat and X-Accel-Buffering header to reduce proxy timeouts.
 
-// ───────────────────────────────────────────────────────────────────────────────
-// Core deps
 const path = require('path');
 const fs = require('fs');
 const express = require('express');
 const { spawn, execFile } = require('child_process');
 
-// ───────────────────────────────────────────────────────────────────────────────
 // Logger: prefer your custom logger, fallback to console with similar API
 let log;
 const tag = path.basename(__filename);
 try {
-    // ───────────────────────────────────────────────────────────────────────────────
-    // Bootstrap logs
-    const { mkLogger } = require('./js/mkLogger');           // your logger file
+    const { mkLogger } = require('./js/mkLogger'); // your custom logger if present
     log = mkLogger(__filename);
     log.section('Server Initialization');
     log.banner(path.basename(__dirname), 'Bootstrapping');
@@ -23,55 +30,51 @@ try {
         'Current file': path.basename(__filename),
         'Current dir': path.basename(__dirname),
         'Version': '1.0.0',
-        'Author': 'Mike Beaudet', 
+        'Author': 'Mike Beaudet',
     });
     log.info('Custom logger testing functions');
-    log.error('Test error log from custom logger');
-    log.warn('Custom logger is working');
-
 } catch (e) {
+    // Minimal fallback logger with same methods used below
     log = {
         ok: (m) => console.log(`[OK] ${tag}: ${m}`),
         step: (t, o) => console.log(`[STEP] ${tag}: ${t}`, o ?? ''),
         banner: (a, b) => console.log(`==== ${a} :: ${b} ====`),
+        warn: (m) => console.warn(`[WARN] ${tag}: ${m}`),
+        error: (m) => console.error(`[ERR] ${tag}: ${m}`),
+        clientlog: (m) => console.log(`[CLIENT] ${tag}: ${m}`),
+        section: (s) => console.log(`\n---- ${s} ----`)
     };
 }
 
-// ───────────────────────────────────────────────────────────────────────────────
-// App init + middleware
+// Create express server instance
 const server = express();
 
-// Parse JSON/forms (for POST routes that may send bodies later)
+// Parse JSON/forms
 server.use(express.json({ limit: '1mb' }));
 server.use(express.urlencoded({ extended: true }));
 
-// Serve static files:
-// 1) from /public (your existing structure)
+// Serve static files from public and project root (extension resolution)
 server.use(express.static(path.join(__dirname, 'public')));
-// 2) ALSO from project root, with extension resolution, so /about → about.html
 server.use(express.static(__dirname, { extensions: ['html'] }));
 
-// ───────────────────────────────────────────────────────────────────────────────
-// Routes
+// ----------------- Existing routes (preserved) --------------------------------
 
-// 1) Simple client→server console logger
-//    Call from browser: fetch('/log?msg=' + encodeURIComponent('Hello'));
+// Client logger endpoint
 server.get('/clientlog', (req, res) => {
     const msg = req.query.msg || '(vide)';
     log.clientlog(msg);
     return res.sendStatus(200);
 });
 
-// 2) Admin page (if you keep a dedicated admin.html under /public)
+// Admin page
 server.get('/admin', (req, res) => {
     log.ok('/admin');
     res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
-// 3) Run Python script and return its JSON
+// Run Python script (existing)
 server.post('/run_python', (req, res) => {
     log.ok('/run_python');
-    //log.section('Python script execution requested');
     const PYTHON_CMD = process.env.PYTHON_CMD || 'python';
     const scriptPath = `C:/MyProjects/python_work/MyNeuronsSim/MyNeuronsSim.py`;
 
@@ -87,10 +90,8 @@ server.post('/run_python', (req, res) => {
                 return res.status(500).json({ error: 'python_exec_failed', detail: String(err) });
             }
             try {
-                const payload = JSON.parse(stdout.trim()); // expects { "code": "..." }
-                if (typeof payload !== 'object' || typeof payload.code !== 'string') {
-                    throw new Error('Invalid JSON from Python');
-                }
+                const payload = JSON.parse(stdout.trim()); // expects JSON from Python
+                if (typeof payload !== 'object') throw new Error('Invalid JSON from Python');
                 return res.json(payload);
             } catch (parseErr) {
                 console.error('JSON parse error:', parseErr, 'stdout=', stdout);
@@ -102,14 +103,11 @@ server.post('/run_python', (req, res) => {
     log.ok('Python script execution initiated');
 });
 
-// 4) Run Python hacker terminal snippet
+// Run Python hacker snippet (existing)
 server.post('/run_python_hacker_snippet', (req, res) => {
     log.ok('/run_python_hacker_snippet');
     const PYTHON_CMD = process.env.PYTHON_CMD || 'python';
     const scriptPath = path.resolve(__dirname, 'js', 'hacker_terminal_snippet.py');
-
-    log.ok(`Executing Python: ${PYTHON_CMD}`);
-    log.ok(`Script: ${scriptPath}`);
 
     execFile(
         PYTHON_CMD,
@@ -122,9 +120,6 @@ server.post('/run_python_hacker_snippet', (req, res) => {
             }
             try {
                 const payload = JSON.parse(stdout.trim());
-                if (typeof payload !== 'object' || typeof payload.code !== 'string') {
-                    throw new Error('Invalid JSON from Python');
-                }
                 return res.json(payload);
             } catch (parseErr) {
                 console.error('JSON parse error:', parseErr, 'stdout=', stdout);
@@ -133,10 +128,10 @@ server.post('/run_python_hacker_snippet', (req, res) => {
         }
     );
 
-    log.ok('Python script execution initiated');
+    log.ok('Python snippet execution initiated');
 });
 
-// 5) Launch a Windows EXE (detached, do not block Node)
+// Launch a Windows EXE (existing)
 server.post('/run_exe', (req, res) => {
     const exePath = 'C:/Users/miche/OneDrive/My Projects/VS Studio Projects/MyRainMatrix/dist/Matrix_Rain/Matrix_Rain.exe';
     const exeDir = path.dirname(exePath);
@@ -168,7 +163,7 @@ server.post('/run_exe', (req, res) => {
     }
 });
 
-// 6) System props API
+// System props API (existing)
 server.get('/api/collect_system_props', (req, res) => {
     log.ok('/api/collect_system_props');
     try {
@@ -181,7 +176,7 @@ server.get('/api/collect_system_props', (req, res) => {
     }
 });
 
-// 7) Teapot (418)
+// Teapot (418)
 server.get('/teapot', (req, res) => {
     log.ok('/teapot');
     res
@@ -199,10 +194,10 @@ server.get('/teapot', (req, res) => {
     `);
 });
 
-// 8) Admin: clear console
+// Admin: clear console (existing)
 function clearConsole() {
     try {
-        process.stdout.write('\x1B[2J\x1B[0;0H');   // ANSI clear + home
+        process.stdout.write('\x1B[2J\x1B[0;0H');
         if (typeof console.clear === 'function') console.clear();
     } catch (_) { }
     log.warn('/admin/console/clear:Admin requested console clear');
@@ -213,13 +208,103 @@ server.get('/admin/console/clear', (_req, res) => {
     res.json({ ok: true });
 });
 
-// ───────────────────────────────────────────────────────────────────────────────
-// Start server
+// ----------------- Ports integration ----------------------------------------
+
+// Import the new syslib_ports module (must exist at ./js/syslib_ports.js)
+let syslibPorts;
+try {
+    syslibPorts = require('./js/syslib_ports');
+    log.ok('syslib_ports module loaded');
+} catch (e) {
+    log.error('Failed to load ./js/syslib_ports.js: ' + String(e));
+    syslibPorts = null;
+}
+
+/**
+ * GET /scan_ports?max=65535
+ * Simple one-shot JSON endpoint that returns the list of port entries filtered by max.
+ * Useful for quick checks from the frontend or scripts.
+ */
+server.get('/scan_ports', async (req, res) => {
+    if (!syslibPorts || typeof syslibPorts.scanPorts !== 'function') {
+        return res.status(500).json({ ok: false, error: 'syslib_ports not available' });
+    }
+    const maxPort = Math.min(65535, Math.max(1, parseInt(req.query.max, 10) || 65535));
+    try {
+        const data = await syslibPorts.scanPorts(maxPort);
+        return res.json({ ok: true, maxPort, count: data.length, data });
+    } catch (err) {
+        console.error('scan_ports failed:', err);
+        return res.status(500).json({ ok: false, error: String(err) });
+    }
+});
+
+/**
+ * GET /scan?max=65535
+ * SSE endpoint streaming progress updates and final data.
+ * Messages:
+ *  - { type: 'start', maxPort }
+ *  - { type: 'progress', current, total }   // total is estimated while streaming
+ *  - { type: 'done', data: [...] }
+ *  - { type: 'error', message }
+ */
+server.get('/scan', async (req, res) => {
+    // Basic SSE headers + disable buffering for proxies (nginx)
+    res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-cache, no-transform');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no'); // hint for nginx to not buffer
+    res.flushHeaders?.();
+
+    // Heartbeat to keep intermediaries from closing idle SSE
+    const hb = setInterval(() => {
+        try { res.write(': hb\n\n'); } catch (_) { }
+    }, 15000);
+
+    const safeEnd = () => {
+        clearInterval(hb);
+        try { res.end(); } catch (_) { }
+    };
+
+    if (!syslibPorts || typeof syslibPorts.scanPorts !== 'function') {
+        res.write(`data: ${JSON.stringify({ type: 'error', message: 'syslib_ports not available' })}\n\n`);
+        return safeEnd();
+    }
+
+    const maxPort = Math.min(65535, Math.max(1, parseInt(req.query.max, 10) || 65535));
+    res.write(`data: ${JSON.stringify({ type: 'start', maxPort })}\n\n`);
+
+    // Use scanPorts with a progress callback to stream progress messages
+    try {
+        const entries = await syslibPorts.scanPorts(maxPort, (current, estimateTotal) => {
+            // progress callback invoked by syslib_ports periodically
+            try {
+                res.write(`data: ${JSON.stringify({ type: 'progress', current, total: estimateTotal })}\n\n`);
+            } catch (e) {
+                // ignore write errors (client may have disconnected)
+            }
+        });
+
+        // final send
+        res.write(`data: ${JSON.stringify({ type: 'done', data: entries })}\n\n`);
+        safeEnd();
+    } catch (err) {
+        res.write(`data: ${JSON.stringify({ type: 'error', message: String(err) })}\n\n`);
+        safeEnd();
+    }
+
+    // If client disconnects, nothing to do because scanPorts uses spawn and will end, but listen anyway
+    req.on('close', () => {
+        safeEnd();
+    });
+});
+
+// ----------------- Remaining server start ----------------------------------
+
 const PORT = process.env.PORT || 8080;   // keep 8080 like your old static server
 server.listen(PORT, () => {
     log.ok(`Server listening on http://localhost:${PORT}`);
     log.section('Server Initialized and listening...');
 });
 
-// Optional export for tests
 module.exports = server;

@@ -5,9 +5,8 @@
     <script src="js/sendLog.js"></script>
 </head>
 <body>
-    <script>
-        sendLog('Now Starting <body> of ' + pageName);
-    </script>
+    <script>sendLog('[' + pageName + '] Now starting <body>');</script>
+
     <h2>Run python C:\MyProjects\python_work\MyNeuronsSim\MyNeuronsSim.py</h2>
     <button onclick="run_python_href()">run_python_href</button>
     <button id="run_python_fetch">run_python_fetch</button>
@@ -15,7 +14,7 @@
 
     <!-- Start scripts -->
     <script>
-    //Run via href
+        //Run via href
         function run_python_href() {
             // Attempt to open the file/URI
             // Note: Most browsers will block this action for security reasons
@@ -27,7 +26,7 @@
     </script>
 
     <script>
-    //Run via fetch to backend and server 
+        //Run via fetch to backend and server
         document.getElementById('run_python_fetch').addEventListener('click', async () => {
             try {
                 sendLog("Attempting to run python via fetch /run_python");

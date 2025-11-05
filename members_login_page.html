@@ -9,6 +9,9 @@
 <body>
     <script>sendLog('[' + pageName + '] Now starting <body>');</script>
 
+    <h2><a href="index.html">Home</a></h2>
+    <h2><a href="syslib_page.html">syslib_page</a></h2>
+
     <h1>Member's Login Page</h1>
     <h1 id="status"></h1>
     <label>username <input id="username" type="text" value="MikeBeaudet" /></label>
@@ -17,6 +20,7 @@
     <button id="loginButton">Login</button>
 
     <script>
+        // Login logic
         sendLog('[' + pageName + '] Members Login page loaded');
         const username = document.getElementById("username");
         const password = document.getElementById("password");
@@ -43,8 +47,84 @@
     </script>
 
     <br /><br />
-    <h2><a href="index.html">Home</a></h2>
-    <h2><a href="syslib_page.html">syslib_page</a></h2>
+
+    <!-- Video player -->
+    <aside class="media-side">
+        <br /><br />
+        <p><h1><b><strong>My Magic vidéos!</strong></b></h1></p>
+
+        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+            <input type="file" id="videoInput" accept="video/*" />
+            <button id="useDefaultBtn" type="button">Use default</button>
+            <span id="videoName" style="font-size:14px; opacity:.8;"></span>
+        </div>
+        <!-- Single video element -->
+        <video id="videoPlayer"
+               controls
+               muted
+               playsinline
+               preload="metadata"
+               style="width:100%; max-width:100%; margin-top:10px; border-radius:8px;">
+            Your browser does not support the video tag.
+        </video>
+    </aside>
+
+
+    <script>
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const DEFAULT_SRC = '/assets/Chink-a-chink v7.mp4'; // your default
+            const video = document.getElementById('videoPlayer');
+            const input = document.getElementById('videoInput');
+            const btn = document.getElementById('useDefaultBtn'); // if you added it
+            const name = document.getElementById('videoName');     // if you added it
+
+            let currentBlobURL = null; // track only the active blob url (if any)
+
+            function setLabel(label) { if (name) name.textContent = label || ''; }
+
+            function playSrc(src, label, isBlob = false) {
+                // Revoke the PREVIOUS blob (if any), not the new one
+                if (currentBlobURL) {
+                    URL.revokeObjectURL(currentBlobURL);
+                    currentBlobURL = null;
+                }
+
+                video.src = src;
+                video.load();
+
+                const p = video.play();
+                if (p && typeof p.catch === 'function') {
+                    p.catch(err => {
+                        // mobile may require a user tap; show controls + message if needed
+                        console.warn('Autoplay blocked:', err);
+                    });
+                }
+
+                setLabel(label);
+                if (isBlob) currentBlobURL = src; // remember only if this src is a blob
+            }
+
+            // Load default on start
+            playSrc(DEFAULT_SRC, `Default: ${DEFAULT_SRC}`, false);
+
+            // File picker -> play selected file
+            input.addEventListener('change', () => {
+                const file = input.files && input.files[0];
+                if (!file) return;
+                const url = URL.createObjectURL(file);
+                playSrc(url, `File: ${file.name}`, true);
+            });
+
+            // Optional "Use default" button
+            if (btn) {
+                btn.addEventListener('click', () => {
+                    input.value = ''; // let user reselect same file later
+                    playSrc(DEFAULT_SRC, `Default: ${DEFAULT_SRC}`, false);
+                });
+            }
+        });
+    </script>
 
 </body>
 </html>

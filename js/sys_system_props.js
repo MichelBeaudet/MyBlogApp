@@ -1,4 +1,4 @@
-// public/system_props.js
+// sys_system_props.js
 
 const output = document.getElementById('output');
 const statusEl = document.getElementById('status');

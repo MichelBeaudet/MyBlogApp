@@ -29,7 +29,7 @@ try {
     log.step('Context', {
         'Current file': path.basename(__filename),
         'Current dir': path.basename(__dirname),
-        'Version': '1.0.0',
+        'Version': '2.0.0 Many implantations',
         'Author': 'Mike Beaudet',
     });
     log.info('Custom logger testing functions');
@@ -164,10 +164,10 @@ server.post('/run_exe', (req, res) => {
 });
 
 // System props API (existing)
-server.get('/api/collect_system_props', (req, res) => {
-    log.ok('/api/collect_system_props');
+server.get('/collect_system_props', (req, res) => {
+    log.ok('/collect_system_props');
     try {
-        const { collect_system_props } = require('./public/api/collect_system_props');
+        const { collect_system_props } = require('./js/collect_system_props');
         const data = collect_system_props();
         return res.json(data);
     } catch (err) {

@@ -7,6 +7,21 @@
     "start": "node server.js"
   },
   "dependencies": {
-    "express": "^4.19.2"
-  }
+    "express": "^4.21.2",
+    "node-wifi": "^2.0.16"
+  },
+  "description": "",
+  "main": "bookstore.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MichelBeaudet/MyBlogApp.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/MichelBeaudet/MyBlogApp/issues"
+  },
+  "homepage": "https://github.com/MichelBeaudet/MyBlogApp#readme"
 }

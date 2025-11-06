@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Wi-Fi Network Scanner</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        :root {
+            --primary: #0078ff;
+            --accent: #00b38f;
+            --text: #333;
+            --bg: #f4f7fb;
+            --card-bg: #ffffff;
+            --border: #ddd;
+        }
+
+        body {
+            margin: 0;
+            padding: 2rem;
+            font-family: 'Inter', 'Segoe UI', Tahoma, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            font-size: 2rem;
+            color: var(--primary);
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        button {
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            color: white;
+            font-size: 1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 10px;
+            padding: 10px 22px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+        }
+
+            button:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+            }
+
+        #status {
+            margin-top: 1rem;
+            font-style: italic;
+            color: #666;
+        }
+
+        table {
+            width: 95%;
+            max-width: 900px;
+            margin-top: 2rem;
+            border-collapse: collapse;
+            border-radius: 12px;
+            overflow: hidden;
+            background: var(--card-bg);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
+        }
+
+        th, td {
+            padding: 14px 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background: #f0f5ff;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        tr:hover {
+            background: rgba(0, 120, 255, 0.08);
+            transition: background 0.2s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        tr {
+            animation: fadeIn 0.3s ease forwards;
+        }
+
+        @media (max-width: 600px) {
+            th, td {
+                font-size: 0.85rem;
+                padding: 8px;
+            }
+
+            h1 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>📶 Wi-Fi Network Scanner</h1>
+    <button id="scanBtn">🔍 Scan Networks</button>
+    <div id="status">Click “Scan Networks” to view nearby Wi-Fi details.</div>
+
+    <table id="networksTable" style="display:none;">
+        <thead>
+            <tr>
+                <th>SSID</th>
+                <th>BSSID</th>
+                <th>Signal</th>
+                <th>Frequency</th>
+                <th>Security</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <script>
+        const scanBtn = document.getElementById("scanBtn");
+        const statusText = document.getElementById("status");
+        const table = document.getElementById("networksTable");
+        const tbody = table.querySelector("tbody");
+
+        async function scanNetworks() {
+            scanBtn.disabled = true;
+            scanBtn.textContent = "Scanning...";
+            statusText.textContent = "Scanning for nearby networks...";
+            try {
+                const res = await fetch("/scan_networks");
+                const data = await res.json();
+                tbody.innerHTML = "";
+                if (data.length === 0) {
+                    statusText.textContent = "No networks found.";
+                    table.style.display = "none";
+                } else {
+                    table.style.display = "table";
+                    data.forEach(net => {
+                        const row = document.createElement("tr");
+                        row.innerHTML = `
+                  <td>${net.ssid || "—"}</td>
+                  <td>${net.bssid || "—"}</td>
+                  <td>${net.signal_level} dBm</td>
+                  <td>${net.frequency} MHz</td>
+                  <td>${net.security || "Unknown"}</td>
+                `;
+                        tbody.appendChild(row);
+                    });
+                    statusText.textContent = `Found ${data.length} network(s).`;
+                }
+            } catch (err) {
+                statusText.textContent = "❌ Error: " + err.message;
+            } finally {
+                scanBtn.disabled = false;
+                scanBtn.textContent = "🔍 Scan Networks";
+            }
+        }
+
+        scanBtn.addEventListener("click", scanNetworks);
+    </script>
+</body>
+</html>

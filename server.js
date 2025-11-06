@@ -147,6 +147,7 @@ server.post('/run_python_hacker_snippet', (req, res) => {
 
 // /run_exe
 server.post('/run_exe', (req, res) => {
+    log.section('/run_exe');
     const exePath = 'C:/Users/miche/OneDrive/My Projects/VS Studio Projects/MyRainMatrix/dist/Matrix_Rain/Matrix_Rain.exe';
     const exeDir = path.dirname(exePath);
     log.ok(`POST /run_exe: EXE launch requested for ${exePath}`);
@@ -209,7 +210,7 @@ try {
 }
 // /scan_ports
 server.get('/scan_ports', async (req, res) => {
-    log.section('/scan_ports request received');
+    log.section('/scan_ports');
     // Basic SSE headers + disable buffering for proxies (nginx)
     res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
     res.setHeader('Cache-Control', 'no-cache, no-transform');
@@ -265,7 +266,7 @@ const { analyzeUrl, analyzeUrlStream } = require('./js/syslib_analyze_url');
 
 // analyze_url
 server.get('/analyze_url', async (req, res) => {
-    log.section('/analyze_url request received');
+    log.section('/analyze_url');
     const raw = (req.query.url || '').trim();
     const wantsStream = req.query.stream === '1' || (req.get('accept') || '').includes('text/event-stream');
 
@@ -321,6 +322,7 @@ server.get('/analyze_url', async (req, res) => {
 
 // /scan_bluetooth
 server.get("/scan_bluetooth", (req, res) => {
+    log.section('//scan_bluetooth');
     // Sanitize duration (float, 1..60 seconds)
     const PYTHON_BIN = process.env.PYTHON_BIN || "python";
     const dur = Math.max(1, Math.min(60, parseFloat(req.query.duration) || 8));
@@ -328,7 +330,6 @@ server.get("/scan_bluetooth", (req, res) => {
         windowsHide: false,
     });
 
-    log.ok(`/scan_bluetooth: spawned ${PYTHON_BIN} for ${dur}s scan`);
     let stdout = "";
     let stderr = "";
 
@@ -380,6 +381,19 @@ server.get("/scan_bluetooth", (req, res) => {
     });
 });
 
+// /scan_networks
+const wifi = require("node-wifi");
+wifi.init({ iface: null }); // Auto-detect
+
+server.get("/scan_networks", async (req, res) => {
+    log.section('/scan_networks');
+    try {
+        const networks = await wifi.scan();
+        res.json(networks);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
 
 // /teapot (418)
 server.get('/teapot', (req, res) => {

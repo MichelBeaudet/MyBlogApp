@@ -1,0 +1,342 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>BLE Scan — Persistent + Progress + On-Page Debug</title>
+    <style>
+        :root {
+            --bg: #f6f8fb;
+            --card: #fff;
+            --text: #1f2a3a;
+            --muted: #66738a;
+            --accent: #0b66cc;
+            --line: #e6ecf3
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--text);
+            font: 14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Arial
+        }
+
+        .wrap {
+            max-width: 980px;
+            margin: 36px auto;
+            padding: 20px
+        }
+
+        h1 {
+            margin: 0 0 8px;
+            font-size: 20px
+        }
+
+        .card {
+            background: var(--card);
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 4px 16px rgba(0,0,0,.06)
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap
+        }
+
+        button {
+            background: var(--accent);
+            color: #fff;
+            border: 0;
+            padding: 8px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600
+        }
+
+            button.secondary {
+                background: transparent;
+                color: var(--accent);
+                border: 1px solid rgba(11,102,204,.35)
+            }
+
+            button:disabled {
+                opacity: .6;
+                cursor: not-allowed
+            }
+
+        #status {
+            margin-left: auto;
+            color: var(--muted);
+            font-size: .95rem
+        }
+
+        .progress {
+            height: 8px;
+            border-radius: 999px;
+            overflow: hidden;
+            background: #e8eef7;
+            margin-top: 8px;
+            display: none
+        }
+
+            .progress.busy {
+                display: block;
+                position: relative
+            }
+
+                .progress.busy::before {
+                    content: "";
+                    position: absolute;
+                    inset: 0;
+                    transform: translateX(-50%);
+                    width: 50%;
+                    background: linear-gradient(90deg,rgba(11,102,204,.18),rgba(11,102,204,.5),rgba(11,102,204,.18));
+                    border-radius: 999px;
+                    animation: bar-move 1.1s linear infinite
+                }
+
+        @keyframes bar-move {
+            0% {
+                left: 0
+            }
+
+            100% {
+                left: 100%
+            }
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 14px
+        }
+
+        th, td {
+            padding: 8px 10px;
+            border-bottom: 1px solid var(--line);
+            text-align: left
+        }
+
+        th {
+            background: #f0f4fa
+        }
+
+        .tag {
+            display: inline-block;
+            background: #eef3fb;
+            color: #2a3b52;
+            padding: 2px 6px;
+            border-radius: 6px;
+            margin: 1px;
+            font-size: .8rem
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 16px;
+            margin-top: 16px
+        }
+
+        .debug {
+            background: #0b1220;
+            color: #cbd5e1;
+            border-radius: 10px;
+            padding: 10px;
+            font: 12px/1.45 ui-monospace,Consolas,Menlo,monospace;
+            height: 220px;
+            overflow: auto
+        }
+
+            .debug b {
+                color: #7dd3fc
+            }
+
+        .pill {
+            display: inline-block;
+            background: #e6f4ff;
+            color: #084e8a;
+            border: 1px solid #b3dcff;
+            border-radius: 999px;
+            padding: 2px 8px;
+            font-size: .8rem
+        }
+    </style>
+    <script src="js/sendLog.js"></script>
+</head>
+<body>
+    <script>sendLog('[' + pageName + '] Now starting <body>');</script>
+
+    <div class="wrap">
+        <h1>BLE Scan — Persistent Results (Windows/Chrome/Edge)</h1>
+        <p style="margin:6px 0 12px;color:#66738a">
+            Uses <code>navigator.bluetooth.requestDevice()</code>. No popups/alerts from the page. Results persist until you clear them.
+        </p>
+
+        <div class="card">
+            <div class="toolbar">
+                <button id="scanBtn">🔍 Scan / Add BLE device</button>
+                <button id="exportBtn" class="secondary">Export JSON</button>
+                <button id="clearBtn" class="secondary">Clear</button>
+                <span id="status">Status: ready</span>
+            </div>
+            <div id="progress" class="progress" aria-hidden="true" aria-label="Working… animated progress bar"></div>
+
+            <div class="grid">
+                <div>
+                    <table aria-live="polite">
+                        <thead>
+                            <tr><th>Name</th><th>ID</th><th>RSSI</th><th>Manufacturer</th><th>Services</th></tr>
+                        </thead>
+                        <tbody id="tbody"></tbody>
+                    </table>
+                </div>
+                <div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+                        <span class="pill" id="avail">Availability: …</span>
+                        <span class="pill" id="api">API: …</span>
+                    </div>
+                    <div id="debug" class="debug" aria-live="polite"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* ================================================================
+           FINAL DIAGNOSTIC-STABLE VERSION
+           - Immediate row after selection (Name + ID)
+           - Persistent table; no automatic clearing
+           - Visible progress bar during GATT
+           - On-page DEBUG log for every step (chooser open/cancel/select/errors)
+           ================================================================ */
+
+        const $ = s => document.querySelector(s);
+        const scanBtn = $('#scanBtn'), exportBtn = $('#exportBtn'), clearBtn = $('#clearBtn');
+        const statusEl = $('#status'), progress = $('#progress'), tbody = $('#tbody'), debugEl = $('#debug');
+        const availEl = $('#avail'), apiEl = $('#api');
+        const devices = new Map();  // Map<safeId, data>
+
+        function log(line) { const t = new Date().toLocaleTimeString(); debugEl.innerHTML += `<div><b>[${t}]</b> ${line}</div>`; debugEl.scrollTop = debugEl.scrollHeight; }
+        function setStatus(s) { statusEl.textContent = 'Status: ' + s; }
+        function setBusy(on) { progress.classList.toggle('busy', !!on); progress.setAttribute('aria-hidden', on ? 'false' : 'true'); scanBtn.disabled = !!on; }
+        function safeId(raw) { return 'x' + String(raw || '').replace(/[^a-zA-Z0-9_.:\-]/g, '_'); }
+
+        (async function featureProbe() {
+            const has = !!navigator.bluetooth;
+            apiEl.textContent = 'API: ' + (has ? 'Web Bluetooth present' : 'NOT available');
+            try {
+                const a = navigator.bluetooth && await navigator.bluetooth.getAvailability();
+                availEl.textContent = 'Availability: ' + (a ? 'Available' : 'Unavailable');
+            } catch { availEl.textContent = 'Availability: unknown'; }
+        })();
+
+        function renderRow(d) {
+            const rowId = 'dev-' + d.safeId;
+            let tr = document.getElementById(rowId);
+            if (!tr) {
+                tr = document.createElement('tr');
+                tr.id = rowId;
+                tr.innerHTML = '<td class="n"></td><td class="i"></td><td class="r"></td><td class="m"></td><td class="s"></td>';
+                tbody.appendChild(tr);
+            }
+            tr.querySelector('.n').textContent = d.name || '(unknown)';
+            tr.querySelector('.i').textContent = d.id || '';
+            tr.querySelector('.r').textContent = (d.rssi == null) ? '' : (d.rssi + ' dBm');
+            tr.querySelector('.m').innerHTML = (d.manufacturer || []).map(x => `<span class="tag">${x}</span>`).join('');
+            tr.querySelector('.s').innerHTML = (d.services || []).map(x => `<span class="tag">${x}</span>`).join('');
+        }
+
+        function manufacturerLabels(entries) {
+            const KNOWN = { 0x004C: 'Apple', 0x0006: 'Microsoft', 0x0131: 'Google', 0x0075: 'Samsung' };
+            return [...entries].map(([id]) => KNOWN[id] ? `${KNOWN[id]} (0x${id.toString(16)})` : `0x${id.toString(16)}`);
+        }
+
+        scanBtn.addEventListener('click', async () => {
+            if (!navigator.bluetooth) { setStatus('Web Bluetooth not supported'); log('navigator.bluetooth missing'); return; }
+
+            try {
+                setStatus('Opening chooser…'); log('requestDevice() called');
+                // TIP: adding common services increases the chance of a selectable BLE device
+                const device = await navigator.bluetooth.requestDevice({
+                    acceptAllDevices: true,
+                    optionalServices: ['battery_service', 'device_information'] // harmless if absent
+                });
+                log('Device selected: name="' + (device.name || '') + '", id="' + (device.id || '') + '"');
+
+                const data = {
+                    id: device.id || '(no-id)',
+                    safeId: safeId(device.id || Math.random().toString(36).slice(2, 9)),
+                    name: device.name || '(unknown)',
+                    rssi: null, manufacturer: [], services: []
+                };
+
+                // Persist and show immediately
+                devices.set(data.safeId, data);
+                renderRow(data);
+                setStatus('Added: ' + data.name);
+
+                // Best-effort advertisements
+                if (device.watchAdvertisements) {
+                    try {
+                        await device.watchAdvertisements();
+                        log('watchAdvertisements() enabled');
+                        device.addEventListener('advertisementreceived', ev => {
+                            data.rssi = ev.rssi;
+                            data.manufacturer = manufacturerLabels(ev.manufacturerData.entries());
+                            renderRow(data);
+                            log('advertisementreceived: rssi=' + ev.rssi);
+                        });
+                    } catch (e) { log('watchAdvertisements not available: ' + (e?.message || e)); }
+                } else {
+                    log('watchAdvertisements() not present on this platform/device');
+                }
+
+                // Short GATT connection to list services
+                if (device.gatt) {
+                    setBusy(true); setStatus('Reading GATT services…'); log('gatt.connect()…');
+                    try {
+                        const server = await device.gatt.connect();
+                        const services = await server.getPrimaryServices();
+                        data.services = services.map(s => s.uuid);
+                        renderRow(data);
+                        try { server.disconnect?.(); } catch { }
+                        setStatus('Done.'); log('GATT services read: ' + data.services.length);
+                    } catch (e) {
+                        setStatus('GATT unavailable (kept basic info)'); log('GATT error: ' + (e?.message || e));
+                    } finally {
+                        setBusy(false);
+                    }
+                } else {
+                    log('device.gatt not present (cannot list services)');
+                }
+
+            } catch (e) {
+                // User canceled OR real error — either way we log it and keep existing rows
+                log('Chooser closed: ' + (e?.message || e || 'cancelled'));
+                setStatus('Chooser closed');
+                setBusy(false);
+            }
+        });
+
+        exportBtn.addEventListener('click', () => {
+            const out = Array.from(devices.values()).map(({ safeId, ...rest }) => rest);
+            if (out.length === 0) { setStatus('Nothing to export'); log('Export skipped: empty'); return; }
+            const blob = new Blob([JSON.stringify(out, null, 2)], { type: 'application/json' });
+            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'bluetooth_scan.json'; a.click();
+            setStatus('Exported ' + out.length + ' device(s)'); log('Exported ' + out.length + ' item(s)');
+        });
+
+        clearBtn.addEventListener('click', () => {
+            devices.clear(); tbody.innerHTML = ''; setBusy(false); setStatus('Cleared'); log('Cleared table');
+        });
+    </script>
+</body>
+</html>

@@ -180,7 +180,6 @@
         }
     </style>
     <script src="js/sendLog.js"></script>
-    <script src="js/syslib_ports.js"></script>
 </head>
 <body>
     <script>sendLog('[' + pageName + '] Now starting <body>');</script>
@@ -350,7 +349,7 @@
             cancelBtn.disabled = false;
 
             // Create SSE connection to backend
-            const url = `/scan?max=${encodeURIComponent(max)}`;
+            const url = `/scan_ports?max=${encodeURIComponent(max)}`;
             evtSource = new EventSource(url);
 
             evtSource.onmessage = (evt) => {

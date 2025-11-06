@@ -58,23 +58,37 @@ server.use(express.static(path.join(__dirname, 'public')));
 server.use(express.static(__dirname, { extensions: ['html'] }));
 
 // ----------------- Existing routes (preserved) --------------------------------
-
-// Client logger endpoint
+// /clientlog
 server.get('/clientlog', (req, res) => {
     const msg = req.query.msg || '(vide)';
     log.clientlog(msg);
     return res.sendStatus(200);
 });
 
-// Admin page
+// /admin
 server.get('/admin', (req, res) => {
-    log.ok('/admin');
+    log.section('/admin');
+    log.ok('Nothing to do!');
     res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
-// Run Python script (existing)
+// /admin/console/clear
+function clearConsole() {
+    try {
+        process.stdout.write('\x1B[2J\x1B[0;0H');
+        if (typeof console.clear === 'function') console.clear();
+    } catch (_) { }
+    log.warn('/admin/console/clear:Admin requested console clear');
+}
+server.get('/admin/console/clear', (_req, res) => {
+    clearConsole();
+    log.section('log clear');
+    res.json({ ok: true });
+});
+
+// /run_python 
 server.post('/run_python', (req, res) => {
-    log.ok('/run_python');
+    log.section('/run_python');
     const PYTHON_CMD = process.env.PYTHON_CMD || 'python';
     const scriptPath = `C:/MyProjects/python_work/MyNeuronsSim/MyNeuronsSim.py`;
 
@@ -103,7 +117,7 @@ server.post('/run_python', (req, res) => {
     log.ok('Python script execution initiated');
 });
 
-// Run Python hacker snippet (existing)
+// /run_python_hacker_snippet
 server.post('/run_python_hacker_snippet', (req, res) => {
     log.ok('/run_python_hacker_snippet');
     const PYTHON_CMD = process.env.PYTHON_CMD || 'python';
@@ -131,7 +145,7 @@ server.post('/run_python_hacker_snippet', (req, res) => {
     log.ok('Python snippet execution initiated');
 });
 
-// Launch a Windows EXE (existing)
+// /run_exe
 server.post('/run_exe', (req, res) => {
     const exePath = 'C:/Users/miche/OneDrive/My Projects/VS Studio Projects/MyRainMatrix/dist/Matrix_Rain/Matrix_Rain.exe';
     const exeDir = path.dirname(exePath);
@@ -163,7 +177,7 @@ server.post('/run_exe', (req, res) => {
     }
 });
 
-// System props API (existing)
+// /collect_system_props
 server.get('/collect_system_props', (req, res) => {
     log.ok('/collect_system_props');
     try {
@@ -176,39 +190,7 @@ server.get('/collect_system_props', (req, res) => {
     }
 });
 
-// Teapot (418)
-server.get('/teapot', (req, res) => {
-    log.ok('/teapot');
-    res
-        .status(418)
-        .type('html')
-        .send(`
-      <html>
-        <head><title>418 I'm a Teapot</title></head>
-        <body style="font-family: sans-serif; text-align:center; margin-top: 50px;">
-          <h1>☕ 418 I'm a Teapot</h1>
-          <p>The server refuses to brew coffee because it is, permanently, a teapot.</p>
-          <p>RFC 2324 – Hyper Text Coffee Pot Control Protocol (HTCPCP/1.0)</p>
-        </body>
-      </html>
-    `);
-});
-
-// Admin: clear console (existing)
-function clearConsole() {
-    try {
-        process.stdout.write('\x1B[2J\x1B[0;0H');
-        if (typeof console.clear === 'function') console.clear();
-    } catch (_) { }
-    log.warn('/admin/console/clear:Admin requested console clear');
-}
-server.get('/admin/console/clear', (_req, res) => {
-    clearConsole();
-    log.section('log clear');
-    res.json({ ok: true });
-});
-
-// Admin: clear console (existing)
+// /clear_sys_props_log
 server.get('/clear_sys_props_log', (_req, res) => {
     log.section('clearing sys_props_log...');
     res.json({ ok: true });
@@ -219,42 +201,15 @@ server.get('/clear_sys_props_log', (_req, res) => {
 // Import the new syslib_ports module (must exist at ./js/syslib_ports.js)
 let syslibPorts;
 try {
-    syslibPorts = require('./js/syslib_ports');
+    syslibPorts = require('./syslib_ports');
     log.ok('syslib_ports module loaded');
 } catch (e) {
     log.error('Failed to load ./js/syslib_ports.js: ' + String(e));
     syslibPorts = null;
 }
-
-/**
- * GET /scan_ports?max=65535
- * Simple one-shot JSON endpoint that returns the list of port entries filtered by max.
- * Useful for quick checks from the frontend or scripts.
- */
+// /scan_ports
 server.get('/scan_ports', async (req, res) => {
-    if (!syslibPorts || typeof syslibPorts.scanPorts !== 'function') {
-        return res.status(500).json({ ok: false, error: 'syslib_ports not available' });
-    }
-    const maxPort = Math.min(65535, Math.max(1, parseInt(req.query.max, 10) || 65535));
-    try {
-        const data = await syslibPorts.scanPorts(maxPort);
-        return res.json({ ok: true, maxPort, count: data.length, data });
-    } catch (err) {
-        console.error('scan_ports failed:', err);
-        return res.status(500).json({ ok: false, error: String(err) });
-    }
-});
-
-/**
- * GET /scan?max=65535
- * SSE endpoint streaming progress updates and final data.
- * Messages:
- *  - { type: 'start', maxPort }
- *  - { type: 'progress', current, total }   // total is estimated while streaming
- *  - { type: 'done', data: [...] }
- *  - { type: 'error', message }
- */
-server.get('/scan', async (req, res) => {
+    log.section('/scan_ports request received');
     // Basic SSE headers + disable buffering for proxies (nginx)
     res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
     res.setHeader('Cache-Control', 'no-cache, no-transform');
@@ -305,11 +260,12 @@ server.get('/scan', async (req, res) => {
     });
 });
 
-// Minimal /proxy_fetch: JSON or SSE (progress) using syslib_analyze_url.js
-
+// Minimal analyze_url: JSON or SSE (progress) using syslib_analyze_url.js
 const { analyzeUrl, analyzeUrlStream } = require('./js/syslib_analyze_url');
 
-server.get('/proxy_fetch', async (req, res) => {
+// analyze_url
+server.get('/analyze_url', async (req, res) => {
+    log.section('/analyze_url request received');
     const raw = (req.query.url || '').trim();
     const wantsStream = req.query.stream === '1' || (req.get('accept') || '').includes('text/event-stream');
 
@@ -363,9 +319,87 @@ server.get('/proxy_fetch', async (req, res) => {
     req.on('close', safeEnd);
 });
 
+// /scan_bluetooth
+server.get("/scan_bluetooth", (req, res) => {
+    // Sanitize duration (float, 1..60 seconds)
+    const PYTHON_BIN = process.env.PYTHON_BIN || "python";
+    const dur = Math.max(1, Math.min(60, parseFloat(req.query.duration) || 8));
+    const py = spawn(PYTHON_BIN, [path.join(__dirname, "./js/syslib_scan_bluetooth.py"), "--duration", String(dur)], {
+        windowsHide: false,
+    });
+
+    log.ok(`/scan_bluetooth: spawned ${PYTHON_BIN} for ${dur}s scan`);
+    let stdout = "";
+    let stderr = "";
+
+    // Collect scanner output
+    py.stdout.on('data', (chunk) => {
+        const text = chunk.toString();      // convert the buffer to readable text
+        stdout += text;                     // accumulate all chunks
+        //console.log('[PYTHON STDOUT]', text); // <-- print each chunk as it arrives
+    });
+
+    py.stderr.on('data', (chunk) => {
+        const text = chunk.toString();
+        stderr += text;
+        //console.error('[PYTHON STDERR]', text); // show errors if any
+    });
+    // Safety timeout (dur + 3s)
+    const killTimer = setTimeout(() => {
+        try { py.kill("SIGKILL"); } catch { }
+    }, (dur + 3) * 1000);
+
+    py.on("close", (code) => {
+        clearTimeout(killTimer);
+
+        // Try to parse JSON from the scanner
+        let body;
+        try {
+            body = JSON.parse(stdout || "[]");
+        } catch (e) {
+            return res.status(500).json({
+                error: "Invalid JSON from scanner",
+                detail: e.message,
+                stdout,
+                stderr,
+                exitCode: code,
+            });
+        }
+
+        // If the scanner returned an {error: "..."} payload, forward as 502
+        if (body && !Array.isArray(body) && body.error) {
+            return res.status(502).json({ error: body.error, stderr, exitCode: code });
+        }
+
+        res.setHeader("Cache-Control", "no-store");
+        return res.json({
+            duration: dur,
+            count: Array.isArray(body) ? body.length : 0,
+            devices: Array.isArray(body) ? body : [],
+        });
+    });
+});
+
+
+// /teapot (418)
+server.get('/teapot', (req, res) => {
+    log.ok('/teapot');
+    res
+        .status(418)
+        .type('html')
+        .send(`
+      <html>
+        <head><title>418 I'm a Teapot</title></head>
+        <body style="font-family: sans-serif; text-align:center; margin-top: 50px;">
+          <h1>☕ 418 I'm a Teapot</h1>
+          <p>The server refuses to brew coffee because it is, permanently, a teapot.</p>
+          <p>RFC 2324 – Hyper Text Coffee Pot Control Protocol (HTCPCP/1.0)</p>
+        </body>
+      </html>
+    `);
+});
 
 // ----------------- Remaining server start ----------------------------------
-
 const PORT = process.env.PORT || 8080;   // keep 8080 like your old static server
 server.listen(PORT, () => {
     log.section('Server Initialized and listening...');

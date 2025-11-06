@@ -190,7 +190,7 @@
     <div class="card">
         <h1>URL Analyzer (server-assisted, SSE)</h1>
         <p class="muted">
-            The browser calls <code>/proxy_fetch</code> on your Node server. The server fetches the page (no CORS limits),
+            The browser calls <code>/analyze_url</code> on your Node server. The server fetches the page (no CORS limits),
             streams **byte progress** via SSE, then returns the full JSON (headers + full HTML + checks + score).
         </p>
 
@@ -333,7 +333,7 @@
             catch { setProgress(0, 'Invalid URL'); setStatus('Invalid URL'); return; }
 
             // Create the EventSource to stream server events
-            const es = new EventSource(`/proxy_fetch?stream=1&url=${encodeURIComponent(normalized)}`);
+            const es = new EventSource(`/analyze_url?stream=1&url=${encodeURIComponent(normalized)}`);
 
             // When the server sends any message, we parse the JSON and update UI
             es.onmessage = (ev) => {
@@ -405,7 +405,7 @@
             catch { setProgress(0, 'Invalid URL'); setStatus('Invalid URL'); return; }
 
             try {
-                const resp = await fetch(`/proxy_fetch?url=${encodeURIComponent(normalized)}`);
+                const resp = await fetch(`/analyze_url?url=${encodeURIComponent(normalized)}`);
                 const data = await resp.json();
                 if (!data.ok) throw new Error(data.detail || data.error || 'server error');
                 setProgress(100, 'Done.'); setStatus('Done.');

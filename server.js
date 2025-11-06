@@ -208,6 +208,12 @@ server.get('/admin/console/clear', (_req, res) => {
     res.json({ ok: true });
 });
 
+// Admin: clear console (existing)
+server.get('/clear_sys_props_log', (_req, res) => {
+    log.section('clearing sys_props_log...');
+    res.json({ ok: true });
+});
+
 // ----------------- Ports integration ----------------------------------------
 
 // Import the new syslib_ports module (must exist at ./js/syslib_ports.js)

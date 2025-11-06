@@ -87,9 +87,9 @@
     <pre id="out">Aucun résultat.</pre>
 
     <script type="module">
-        import SecureTelemetry from './api/telemetry.secure.js';
-        import IntrusiveTelemetry from './api/telemetry.intrusive.js';
-        import { sha256Hex } from './api/hash.js';
+        import SecureTelemetry from './js/telemetry.secure.js';
+        import IntrusiveTelemetry from './js/telemetry.intrusive.js';
+        import { sha256Hex } from './js/syslib_hash.js';
 
         const out = document.getElementById('out');
         const s = SecureTelemetry();

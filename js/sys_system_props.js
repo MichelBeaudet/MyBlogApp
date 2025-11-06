@@ -9,17 +9,18 @@ const run_collect_system_prop = document.getElementById('run_collect_system_prop
 // Get the current script file name
 const currentScript = document.currentScript;
 const parts = currentScript.src.split("/");
-sendLog("*** Running script system_props.js:", parts.pop());
+sendLog("Running script system_props.js:", parts.pop());
 
 async function loadLive() {
     setStatus('Fetching /collect_system_prop …');
     try {
-        console.log("*** await fetch(/collect_system_props", parts.pop());
-
+        //console.log("*** await fetch(/collect_system_props", parts.pop());
+        sendLog("Fetching /collect_system_props" + parts.pop());
         const res = await fetch('/collect_system_props', { cache: 'no-store' });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
-        console.log("*** fetch ok, data:", data);
+
+        sendLog("fetch ok" );
         output.textContent = JSON.stringify(data, null, 2);
         setStatus(`Live snapshot at ${new Date().toLocaleString()}`);
     } catch (err) {
@@ -53,4 +54,4 @@ function downloadCurrent() {
 
 // Initial load
 loadLive();
-console.log("*** End of system_props.js");
+sendLog("End of system_props.js");

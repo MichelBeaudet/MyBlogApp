@@ -83,20 +83,15 @@
         </p>
     </main>
 
-    <script>
-        console.log("***System_props HTML page loaded");
-        sendLog("+++System_props HTML page loaded");
-    </script>
-
     <script src="./js/sys_system_props.js"></script>
 
     <script>
         /* Fully-commented, minimal client-side trigger */
-        sendLog(`System_props HTML page loaded:Trying to fetch /admin/console/clear`);
+        sendLog(`Trying to fetch /clear_sys_props_log`);
         document.getElementById('btnClearConsole').addEventListener('click', async () => {
             try {
                 // Use POST (recommended). If you prefer GET, change to fetch('/admin/console/clear?key=...')
-                const resp = await fetch('/admin/console/clear', {
+                const resp = await fetch('/clear_sys_props_log', {
                     method: 'GET' // POST for side-effects
                 });
 

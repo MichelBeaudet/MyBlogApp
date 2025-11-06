@@ -1,0 +1,313 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>Dual-View Word Generator → STL</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- Dark, clean styles (no frameworks) -->
+    <style>
+        :root {
+            color-scheme: dark;
+            --bg: #0e1117;
+            --panel: #141a22;
+            --muted: #273142;
+            --text: #e6e6e6;
+            --accent: #7fb3ff;
+            --line: #2b3140;
+        }
+
+        html, body {
+            margin: 0;
+            height: 100%;
+            background: var(--bg);
+            color: var(--text);
+            font-family: system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif
+        }
+
+        #app {
+            display: grid;
+            grid-template-columns: 400px 1fr;
+            grid-template-rows: 1fr 36px;
+            height: 100%
+        }
+
+        aside {
+            background: var(--panel);
+            border-right: 1px solid var(--line);
+            overflow: auto
+        }
+
+        main {
+            position: relative;
+            background: #ffffff;
+        }
+
+        .section {
+            padding: 12px;
+            border-bottom: 1px solid var(--line)
+        }
+
+            .section h3 {
+                margin: 0 0 8px 0;
+                font-size: 14px;
+                color: var(--accent)
+            }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px
+        }
+
+        .row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap
+        }
+
+        .col {
+            display: flex;
+            flex-direction: column;
+            gap: 6px
+        }
+
+        label {
+            font-size: 12px;
+            opacity: .85
+        }
+
+        input[type="text"], input[type="number"], input[type="file"], select {
+            background: #0f1218;
+            border: 1px solid var(--line);
+            color: var(--text);
+            padding: 6px 8px;
+            border-radius: 8px;
+            min-height: 32px
+        }
+
+        button {
+            background: #1f2a44;
+            border: 1px solid var(--line);
+            color: var(--text);
+            padding: 8px 12px;
+            border-radius: 10px;
+            cursor: pointer
+        }
+
+            button:hover {
+                background: #243052
+            }
+
+        .btn-primary {
+            background: #2b63b7
+        }
+
+            .btn-primary:hover {
+                background: #2e6ed0
+            }
+
+        .btn-danger {
+            background: #733b3b
+        }
+
+            .btn-danger:hover {
+                background: #8a4747
+            }
+
+        .toolbar {
+            position: absolute;
+            left: 12px;
+            top: 12px;
+            display: flex;
+            gap: 8px;
+            background: rgba(0,0,0,.35);
+            padding: 8px;
+            border-radius: 10px;
+            border: 1px solid #000
+        }
+
+        #viewer {
+            position: absolute;
+            inset: 0
+        }
+
+        .status {
+            grid-column: 1/-1;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 6px 10px;
+            border-top: 1px solid var(--line);
+            background: #0c1016;
+            font-size: 12px
+        }
+
+        .badge {
+            background: rgba(255,255,255,.08);
+            padding: 4px 8px;
+            border-radius: 999px;
+            border: 1px solid var(--line)
+        }
+
+        .sep {
+            width: 1px;
+            height: 18px;
+            background: var(--line)
+        }
+
+        .hint {
+            opacity: .7
+        }
+
+        .caps {
+            font-variant: all-small-caps;
+            opacity: .9
+        }
+
+        .small {
+            font-size: 12px
+        }
+    </style>
+
+    <!-- Import map so example modules resolve their internal `import 'three'` -->
+    <script type="importmap">
+        {
+          "imports": {
+            "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+            "three/examples/jsm/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+          }
+        }
+    </script>
+</head>
+<body>
+    <div id="app">
+        <!-- LEFT PANEL -->
+        <aside>
+            <!-- Words & Angle -->
+            <div class="section">
+                <h3>Words & Angle</h3>
+                <div class="grid">
+                    <div class="col">
+                        <label for="wordA">Word A (front)</label>
+                        <input id="wordA" type="text" value="Mike" />
+                    </div>
+                    <div class="col">
+                        <label for="wordB">Word B (rotated)</label>
+                        <input id="wordB" type="text" value="Jane" />
+                    </div>
+                    <div class="col">
+                        <label for="angle">Angle (°)</label>
+                        <input id="angle" type="number" value="45" min="1" max="89" step="1" />
+                    </div>
+                    <div class="col">
+                        <label class="hint">Presets</label>
+                        <div class="row">
+                            <button id="preset30" class="badge">30°</button>
+                            <button id="preset45" class="badge">45°</button>
+                            <button id="preset60" class="badge">60°</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Font & Styling -->
+            <div class="section">
+                <h3>Font & Styling</h3>
+                <div class="grid">
+                    <div class="col">
+                        <label for="fontFile">Cursive Font (TTF/OTF)</label>
+                        <input id="fontFile" type="file" accept=".ttf,.otf" />
+                    </div>
+                    <div class="col">
+                        <label for="fontSize">Font Size (px)</label>
+                        <input id="fontSize" type="number" value="160" min="24" step="4" />
+                    </div>
+                    <div class="col">
+                        <label for="stroke">Stroke/Boldening (px)</label>
+                        <input id="stroke" type="number" value="3" min="0" step="1" />
+                    </div>
+                </div>
+            </div>
+
+            <!-- Voxel Grid & Scale -->
+            <div class="section">
+                <h3>Voxel Grid & Scale</h3>
+                <div class="grid">
+                    <div class="col">
+                        <label for="voxX">Grid X (thickness)</label>
+                        <input id="voxX" type="number" value="96" min="24" step="8" />
+                    </div>
+                    <div class="col">
+                        <label for="voxY">Grid Y (width)</label>
+                        <input id="voxY" type="number" value="192" min="48" step="8" />
+                    </div>
+                    <div class="col">
+                        <label for="voxZ">Grid Z (height)</label>
+                        <input id="voxZ" type="number" value="96" min="48" step="8" />
+                    </div>
+                    <div class="col">
+                        <label for="mmPerVoxel">mm per voxel</label>
+                        <input id="mmPerVoxel" type="number" value="0.6" min="0.2" step="0.1" />
+                    </div>
+                    <div class="col">
+                        <label for="imgW">Mask W (px)</label>
+                        <input id="imgW" type="number" value="512" min="256" step="64" />
+                    </div>
+                    <div class="col">
+                        <label for="imgH">Mask H (px)</label>
+                        <input id="imgH" type="number" value="256" min="128" step="32" />
+                    </div>
+                </div>
+                <div class="row" style="margin-top:8px">
+                    <span class="hint caps small">Quality presets:</span>
+                    <button id="qDraft" class="badge">Draft</button>
+                    <button id="qNormal" class="badge">Normal</button>
+                    <button id="qHigh" class="badge">High</button>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="section">
+                <h3>Actions</h3>
+                <div class="row">
+                    <button id="btnGenerate" class="btn-primary">Generate</button>
+                    <button id="btnStop" class="btn-danger" disabled>Cancel</button>
+                </div>
+                <div class="row" style="margin-top:8px">
+                    <button id="btnExport" disabled>Export STL (ASCII)</button>
+                    <button id="btnExportBin" disabled>Export STL (Binary)</button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- VIEWER -->
+        <main>
+            <div class="toolbar">
+                <button id="btnReset">Reset</button>
+                <button id="btnCenter">Center</button>
+                <button id="btnGrid">Grid</button>
+                <button id="btnAxes">Axes</button>
+                <button id="btnWire">Wireframe</button>
+                <button id="btnAutorotate">Auto-rotate</button>
+            </div>
+            <div id="viewer"></div>
+        </main>
+
+        <!-- STATUS BAR -->
+        <div class="status">
+            <span id="progress">Idle</span>
+            <div class="sep"></div>
+            <span id="statsDims" class="hint">Size: –</span>
+            <span id="statsVox" class="hint">Voxels: –</span>
+            <span id="statsTime" class="hint">Time: –</span>
+        </div>
+    </div>
+
+    <!-- Your logger (kept) -->
+    <script src="./js/sendLog.js"></script>
+    <script>if (typeof sendLog === 'function') sendLog('Before loading dual.js script');</script>
+
+    <!-- Main module (your existing logic; now also handles new toolbar & export) -->
+    <script type="module" src="./js/run_dual3dmodel.js"></script>
+</body>
+</html>

@@ -83,8 +83,11 @@ main {
     grid-column: 2;
 }
 
-.block_goodies {
+.block_html_tools {
     grid-column: 3;
+}
+.block_node_tools {
+    grid-column: 4;
 }
 
 /* Main Article --------------------------------------------------------- */
@@ -149,8 +152,8 @@ main {
             transform: translateY(0);
         }
 
-/* Goodies -------------------------------------------------------------- */
-.block_goodies {
+/* html tools -------------------------------------------------------------- */
+.block_html_tools {
     background: var(--surface);
     border: 1px solid var(--line);
     border-radius: var(--radius);
@@ -158,13 +161,13 @@ main {
     box-shadow: 0 4px 15px rgba(0,0,0,0.06);
 }
 
-    .block_goodies p {
+    .block_html_tools p {
         font-weight: 600;
         font-size: 15px;
         margin-bottom: 12px;
     }
 
-    .block_goodies a {
+    .block_html_tools a {
         display: block;
         text-decoration: none;
         color: var(--accent);
@@ -178,13 +181,53 @@ main {
         box-shadow: 0 2px 5px rgba(37,99,235,0.15);
     }
 
-        .block_goodies a:hover {
+        .block_html_tools a:hover {
             background: var(--goodie-hover);
             border-color: var(--accent);
             transform: translateX(4px);
         }
 
-        .block_goodies a:active {
+        .block_html_tools a:active {
+            background: var(--accent);
+            color: var(--accent-ink);
+        }
+
+/* html tools -------------------------------------------------------------- */
+.block_node_tools {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+}
+
+    .block_node_tools p {
+        font-weight: 600;
+        font-size: 15px;
+        margin-bottom: 12px;
+    }
+
+    .block_node_tools a {
+        display: block;
+        text-decoration: none;
+        color: var(--accent);
+        background: var(--goodie-bg);
+        border: 1px solid transparent;
+        padding: 10px 12px;
+        border-radius: var(--radius);
+        font-weight: 600;
+        margin-bottom: 8px;
+        transition: all 0.15s ease-in-out;
+        box-shadow: 0 2px 5px rgba(37,99,235,0.15);
+    }
+
+        .block_node_tools a:hover {
+            background: var(--goodie-hover);
+            border-color: var(--accent);
+            transform: translateX(4px);
+        }
+
+        .block_node_tools a:active {
             background: var(--accent);
             color: var(--accent-ink);
         }
@@ -207,7 +250,7 @@ footer {
         order: 1;
     }
 
-    .block_properties, .block_goodies {
+    .block_properties, .block_html_tools, block_node_tools {
         order: 2;
     }
 }

@@ -10,7 +10,7 @@
             --card: #111827;
             --muted: #94a3b8;
             --ink: #e5e7eb;
-            --accent: #22d3ee;
+            --accent: #22d3ee
         }
 
         * {
@@ -21,7 +21,7 @@
             margin: 0;
             font: 16px system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell;
             background: var(--bg);
-            color: var(--ink);
+            color: var(--ink)
         }
 
         header {
@@ -29,12 +29,12 @@
             display: flex;
             align-items: center;
             gap: 12px;
-            border-bottom: 1px solid #1f2937;
+            border-bottom: 1px solid #1f2937
         }
 
             header h1 {
                 font-size: 20px;
-                margin: 0;
+                margin: 0
             }
 
             header button {
@@ -52,7 +52,7 @@
             padding: 18px;
             display: grid;
             grid-template-columns: repeat(auto-fit,minmax(280px,1fr));
-            gap: 16px;
+            gap: 16px
         }
 
         .card {
@@ -146,10 +146,20 @@
             color: #7dd3fc
         }
     </style>
+
+    <!-- Optional: if present, we'll use it safely -->
     <script src="js/sendLog.js"></script>
 </head>
 <body>
-    <script>sendLog('[' + pageName + '] Now starting <body>');</script>
+    <script>
+        // Guard against missing logger or pageName
+        (function () {
+            const safeName = (typeof pageName === 'string' && pageName) ? pageName : 'fun_useful_apis';
+            if (typeof sendLog === 'function') {
+                sendLog('[' + safeName + '] Now starting <body>');
+            }
+        })();
+    </script>
 
     <header>
         <h1>Fun + Useful APIs</h1>
@@ -158,19 +168,11 @@
 
     <main>
         <section class="card" id="weatherCard">
-            <h2>Weather (Open‑Meteo)</h2>
-            <div class="small">Auto‑locates (if allowed); fallback: Toronto, CA.</div>
+            <h2>Weather (Open-Meteo)</h2>
+            <div class="small">Auto-locates (if allowed); fallback: Toronto, CA.</div>
             <div id="weatherOutput" class="mono">Loading current weather…</div>
             <div class="row">
                 <button class="btn" id="refreshWeather">Refresh</button>
-            </div>
-        </section>
-
-        <section class="card" id="boredCard">
-            <h2>Random Activity (Bored API)</h2>
-            <div id="boredOutput" class="mono">Click “New activity” to get an idea.</div>
-            <div class="row">
-                <button class="btn" id="newActivity">New activity</button>
             </div>
         </section>
 
@@ -192,14 +194,6 @@
             </div>
         </section>
 
-        <section class="card" id="dogCard">
-            <h2>Random Dog (Dog CEO)</h2>
-            <div class="imgbox"><img id="dogImg" alt="" /></div>
-            <div class="row">
-                <button class="btn" id="newDog">Another doggo</button>
-            </div>
-        </section>
-
         <section class="card" id="catCard">
             <h2>Cat Fact</h2>
             <div id="catOutput" class="mono">Click to get a feline fact.</div>
@@ -212,139 +206,112 @@
     <footer>
         <div class="status">
             <strong>Status:</strong>
-            <span class="warn">🟡 Browser‑only demo; requires HTTPS for geolocation on most browsers.</span>
+            <span class="warn">🟡 Browser-only demo; requires HTTPS for geolocation on most browsers.</span>
             <br /><span>
-                APIs used: <a href="https://api.open-meteo.com/" target="_blank" rel="noreferrer">Open‑Meteo</a>,
-                <a href="https://www.boredapi.com/" target="_blank" rel="noreferrer">Bored API</a>,
+                APIs used:
+                <a href="https://api.open-meteo.com/" target="_blank" rel="noreferrer">Open-Meteo</a>,
                 <a href="https://api.adviceslip.com/" target="_blank" rel="noreferrer">Advice Slip</a>,
                 <a href="https://yesno.wtf/" target="_blank" rel="noreferrer">Yes/No</a>,
-                <a href="https://dog.ceo/dog-api/" target="_blank" rel="noreferrer">Dog CEO</a>,
                 <a href="https://catfact.ninja/" target="_blank" rel="noreferrer">Catfact</a>.
             </span>
         </div>
     </footer>
 
     <script>
-        // Small helper
+        // Helpers -------------------------------------------------------------------
         const el = id => document.getElementById(id);
-        const setText = (id, txt) => el(id).textContent = txt;
+        const setText = (id, txt) => { const n = el(id); if (n) n.textContent = txt; };
 
-        // Weather via Open‑Meteo --------------------------------------------------
+        // Weather via Open-Meteo ----------------------------------------------------
         const TORONTO = { lat: 43.6532, lon: -79.3832 };
+
         async function loadWeather(coords) {
             try {
-                const lat = coords?.lat ?? TORONTO.lat;
-                const lon = coords?.lon ?? TORONTO.lon;
-                setText('weatherOutput', \`Fetching weather for (\${lat.toFixed(3)}, \${lon.toFixed(3)})…\`);
-            const url = \`https://api.open-meteo.com/v1/forecast?latitude=\${lat}&longitude=\${lon}&current_weather=true\`;
-            const res = await fetch(url);
-            if(!res.ok) throw new Error('HTTP '+res.status);
-            const data = await res.json();
-            if(!data.current_weather){ throw new Error('No current_weather in response'); }
-            const cw = data.current_weather;
-            const line = \`Temperature: \${cw.temperature}°C | Wind: \${cw.windspeed} km/h | Direction: \${cw.winddirection}° | Code: \${cw.weathercode}\`;
-            setText('weatherOutput', line);
-          }catch(err){
-            setText('weatherOutput', 'Error loading weather: '+err.message);
-          }
+                const lat = (coords && typeof coords.lat === 'number') ? coords.lat : TORONTO.lat;
+                const lon = (coords && typeof coords.lon === 'number') ? coords.lon : TORONTO.lon;
+
+                setText('weatherOutput', `Fetching weather for (${lat.toFixed(3)}, ${lon.toFixed(3)})…`);
+
+                const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`;
+                const res = await fetch(url);
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+
+                const data = await res.json();
+                if (!data.current_weather) throw new Error('No current_weather in response');
+
+                const cw = data.current_weather;
+                const line = `Temperature: ${cw.temperature}°C | Wind: ${cw.windspeed} km/h | Direction: ${cw.winddirection}° | Code: ${cw.weathercode}`;
+                setText('weatherOutput', line);
+            } catch (err) {
+                setText('weatherOutput', 'Error loading weather: ' + err.message);
+            }
         }
 
-        function initWeather(){
-          if(navigator.geolocation){
-            navigator.geolocation.getCurrentPosition(
-              pos => loadWeather({ lat: pos.coords.latitude, lon: pos.coords.longitude }),
-              _err => loadWeather(TORONTO),
-              { enableHighAccuracy:false, timeout:5000, maximumAge:60000 }
-            );
-          }else{
-            loadWeather(TORONTO);
-          }
+        function initWeather() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    pos => loadWeather({ lat: pos.coords.latitude, lon: pos.coords.longitude }),
+                    () => loadWeather(TORONTO),
+                    { enableHighAccuracy: false, timeout: 5000, maximumAge: 60000 }
+                );
+            } else {
+                loadWeather(TORONTO);
+            }
         }
 
-        // Bored API ---------------------------------------------------------------
-        async function loadActivity(){
-          try{
-            setText('boredOutput', 'Thinking of something fun…');
-            const res = await fetch('https://www.boredapi.com/api/activity');
-            if(!res.ok) throw new Error('HTTP '+res.status);
-            const data = await res.json();
-            const s = \`\${data.activity}  (type: \${data.type}, participants: \${data.participants})\`;
-            setText('boredOutput', s);
-          }catch(err){
-            setText('boredOutput', 'Error: '+err.message);
-          }
+        // Advice Slip ---------------------------------------------------------------
+        async function loadAdvice() {
+            try {
+                setText('adviceOutput', 'Fetching wisdom…');
+                const res = await fetch('https://api.adviceslip.com/advice', { cache: 'no-store' });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const data = await res.json();
+                setText('adviceOutput', '“' + data.slip.advice + '”');
+            } catch (err) {
+                setText('adviceOutput', 'Error: ' + err.message);
+            }
         }
 
-        // Advice Slip -------------------------------------------------------------
-        async function loadAdvice(){
-          try{
-            setText('adviceOutput', 'Fetching wisdom…');
-            const res = await fetch('https://api.adviceslip.com/advice', { cache: 'no-store' });
-            if(!res.ok) throw new Error('HTTP '+res.status);
-            const data = await res.json();
-            setText('adviceOutput', '“'+data.slip.advice+'”');
-          }catch(err){
-            setText('adviceOutput', 'Error: '+err.message);
-          }
+        // Yes/No --------------------------------------------------------------------
+        async function askYesNo() {
+            try {
+                setText('yesnoAnswer', 'Asking…');
+                el('yesnoImg').src = '';
+                const res = await fetch('https://yesno.wtf/api');
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const data = await res.json();
+                el('yesnoImg').src = data.image;
+                setText('yesnoAnswer', String(data.answer || '').toUpperCase());
+            } catch (err) {
+                setText('yesnoAnswer', 'Error: ' + err.message);
+            }
         }
 
-        // Yes/No ------------------------------------------------------------------
-        async function askYesNo(){
-          try{
-            setText('yesnoAnswer', 'Asking…');
-            el('yesnoImg').src = '';
-            const res = await fetch('https://yesno.wtf/api');
-            if(!res.ok) throw new Error('HTTP '+res.status);
-            const data = await res.json();
-            el('yesnoImg').src = data.image;
-            setText('yesnoAnswer', data.answer.toUpperCase());
-          }catch(err){
-            setText('yesnoAnswer', 'Error: '+err.message);
-          }
+        // Cat Fact ------------------------------------------------------------------
+        async function loadCat() {
+            try {
+                setText('catOutput', 'Fetching a cat fact…');
+                const res = await fetch('https://catfact.ninja/fact');
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const data = await res.json();
+                setText('catOutput', data.fact);
+            } catch (err) {
+                setText('catOutput', 'Error: ' + err.message);
+            }
         }
 
-        // Dog CEO -----------------------------------------------------------------
-        async function loadDog(){
-          try{
-            el('dogImg').alt = 'Loading…';
-            el('dogImg').src = '';
-            const res = await fetch('https://dog.ceo/api/breeds/image/random');
-            if(!res.ok) throw new Error('HTTP '+res.status);
-            const data = await res.json();
-            el('dogImg').src = data.message;
-            el('dogImg').alt = 'A very good dog';
-          }catch(err){
-            el('dogImg').alt = 'Error: '+err.message;
-          }
-        }
+        // Wire up buttons -----------------------------------------------------------
+        el('refreshWeather').addEventListener('click', initWeather);
+        el('newAdvice').addEventListener('click', loadAdvice);
+        el('askYesNo').addEventListener('click', askYesNo);
+        el('newCat').addEventListener('click', loadCat);
+        el('surprise').addEventListener('click', () => {
+            loadAdvice(); askYesNo(); loadCat(); initWeather();
+        });
 
-        // Cat Fact ----------------------------------------------------------------
-        async function loadCat(){
-          try{
-            setText('catOutput', 'Fetching a cat fact…');
-            const res = await fetch('https://catfact.ninja/fact');
-            if(!res.ok) throw new Error('HTTP '+res.status);
-            const data = await res.json();
-            setText('catOutput', data.fact);
-          }catch(err){
-            setText('catOutput', 'Error: '+err.message);
-          }
-        }
-
-        // Wire up buttons ---------------------------------------------------------
-        el('refreshWeather').addEventListener('click', () => initWeather());
-        el('newActivity').addEventListener('click', () => loadActivity());
-        el('newAdvice').addEventListener('click', () => loadAdvice());
-        el('askYesNo').addEventListener('click', () => askYesNo());
-        el('newDog').addEventListener('click', () => loadDog());
-        el('newCat').addEventListener('click', () => loadCat());
-        el('surprise').addEventListener('click', () => { loadActivity(); loadAdvice(); askYesNo(); loadDog(); loadCat(); initWeather(); });
-
-        // Initial load (some of them)
+        // Initial load --------------------------------------------------------------
         initWeather();
-        loadActivity();
         loadAdvice();
-        loadDog();
         loadCat();
     </script>
 </body>

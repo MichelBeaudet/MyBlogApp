@@ -100,6 +100,27 @@
             animation: fadeIn 0.3s ease forwards;
         }
 
+        /* Wi-Fi bar visual */
+        .signal-bar {
+            width: 80px;
+            height: 10px;
+            background: #e0e0e0;
+            border-radius: 5px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .signal-fill {
+            height: 100%;
+            transition: width 0.4s ease, background 0.4s ease;
+        }
+
+        .signal-text {
+            font-size: 0.85rem;
+            color: #555;
+            margin-top: 4px;
+        }
+
         @media (max-width: 600px) {
             th, td {
                 font-size: 0.85rem;
@@ -136,6 +157,30 @@
         const table = document.getElementById("networksTable");
         const tbody = table.querySelector("tbody");
 
+        function signalColor(level) {
+            if (level >= -50) return "#00b38f";      // Excellent (green)
+            if (level >= -65) return "#ffc107";      // Good (yellow)
+            return "#ff5252";                        // Weak (red)
+        }
+
+        function signalStrengthPercent(level) {
+            // Normalize from -90 (worst) to -30 (best)
+            return Math.min(100, Math.max(0, ((level + 90) / 60) * 100));
+        }
+
+        function createSignalBar(level) {
+            const percent = signalStrengthPercent(level);
+            const color = signalColor(level);
+            return `
+            <div>
+              <div class="signal-bar">
+                <div class="signal-fill" style="width:${percent}%; background:${color};"></div>
+              </div>
+              <div class="signal-text">${level} dBm</div>
+            </div>
+          `;
+        }
+
         async function scanNetworks() {
             scanBtn.disabled = true;
             scanBtn.textContent = "Scanning...";
@@ -154,7 +199,7 @@
                         row.innerHTML = `
                   <td>${net.ssid || "—"}</td>
                   <td>${net.bssid || "—"}</td>
-                  <td>${net.signal_level} dBm</td>
+                  <td>${createSignalBar(net.signal_level)}</td>
                   <td>${net.frequency} MHz</td>
                   <td>${net.security || "Unknown"}</td>
                 `;

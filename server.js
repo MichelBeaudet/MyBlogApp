@@ -65,11 +65,11 @@ server.get('/clientlog', (req, res) => {
     return res.sendStatus(200);
 });
 
-// /admin
-server.get('/admin', (req, res) => {
-    log.section('/admin');
+// /nothing
+server.get('/nothing', (req, res) => {
+    log.section('/nothing');
     log.ok('Nothing to do!');
-    res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+    res.sendFile(path.join(__dirname, 'public', 'nothing.html'));
 });
 
 // /admin/console/clear
@@ -397,7 +397,7 @@ server.get("/scan_networks", async (req, res) => {
 
 // /teapot (418)
 server.get('/teapot', (req, res) => {
-    log.ok('/teapot');
+    log.section('/teapot');
     res
         .status(418)
         .type('html')

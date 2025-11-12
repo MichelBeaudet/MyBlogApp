@@ -2,7 +2,7 @@
 
 sendLog('Loaded syslib_network_inspector.js (with RAW fallback)');
 
-const RAW_ENDPOINTS = ['/api/raw', '/network/raw']; // try in this order
+const RAW_ENDPOINTS = ['/network_inspector', '/network_raw']; // try in this order
 const state = { sortKey: 'protocol', sortDir: 1, timer: null, lastSnapshotKeys: new Set(), data: [], platform: '' };
 const el = {
     tbody: document.getElementById('tbody'),
@@ -81,7 +81,7 @@ async function fetchRAW() {
             return { endpoint: ep, text: await r.text() };
         } catch (e) { /* try next */ }
     }
-    throw new Error('No RAW endpoint reachable (tried /api/raw and /network/raw)');
+    throw new Error('No RAW endpoint reachable (tried /network_inspector and /network_raw)');
 }
 
 // ---- Rendering + UI ----
@@ -184,7 +184,7 @@ function schedule() { clearInterval(state.timer); const ms = Number(el.refresh.v
 async function load() {
     el.refreshNow.disabled = true;
     try {
-        const rawRes = await fetch('/api/raw', { cache: 'no-store' }); // or '/network/raw'
+        const rawRes = await fetch('/network_inspector', { cache: 'no-store' }); // or '/network_raw'
         if (!rawRes.ok) throw new Error('raw fetch failed: ' + rawRes.status);
         const text = await rawRes.text();
         state.data = parseRawNetstat(text);   // use helpers from the full code above

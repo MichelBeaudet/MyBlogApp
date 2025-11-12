@@ -1,129 +1,454 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
     <meta charset="utf-8" />
-    <title>Member's Login Page</title>
-    <script src="js/sendLog.js"></script>
+    <title>Member Login — Hacker Mode + Stable Rain</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <style>
+        :root {
+            --bg-1: #070b0a;
+            --bg-2: #0c1412;
+            --grid: #0f241d;
+            --panel: rgba(10,16,14,0.86);
+            --edge: #12382b;
+            --txt: #c7ffdf;
+            --muted: #78bfa0;
+            --accent: #26ff93;
+            --accent-2: #12d176;
+            --error: #ff6b6b;
+            --radius: 18px;
+            --shadow: 0 12px 36px rgba(0,0,0,0.45), inset 0 0 0 1px rgba(38,255,147,0.08);
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        html, body {
+            height: 100%;
+            margin: 0;
+            background: var(--bg-1);
+            color: var(--txt);
+            font-family: ui-monospace,Menlo,Consolas,monospace
+        }
+
+            /* Background gradient + static grid (no animation) */
+            body::before {
+                content: "";
+                position: fixed;
+                inset: 0;
+                z-index: -2;
+                background: radial-gradient(1200px 600px at 15% 20%, rgba(38,255,147,0.10), transparent 60%), radial-gradient(1000px 500px at 80% 75%, rgba(0,180,120,0.10), transparent 60%), linear-gradient(135deg, var(--bg-1), var(--bg-2));
+                filter: saturate(110%);
+            }
+
+            body::after {
+                content: "";
+                position: fixed;
+                inset: 0;
+                z-index: -1;
+                pointer-events: none;
+                background: repeating-linear-gradient( to right, transparent 0 59px, var(--grid) 59px 60px ), repeating-linear-gradient( to bottom, transparent 0 59px, var(--grid) 59px 60px );
+                opacity: .30;
+            }
+
+        /* Static vignette + scanlines (no flicker) */
+        .fx::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 1;
+            background: radial-gradient(ellipse at center, transparent 52%, rgba(0,0,0,0.55) 100%);
+            mix-blend-mode: multiply;
+        }
+
+        .fx::after {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 1;
+            background: repeating-linear-gradient( to bottom, rgba(255,255,255,0.05), rgba(255,255,255,0.05) 1px, transparent 1px, transparent 3px );
+            opacity: .045; /* fixed, no animation */
+        }
+
+        /* Rain sits above background, below overlays/content */
+        #rain {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            display: block;
+        }
+
+        /* Content */
+        .wrap {
+            min-height: 100%;
+            display: grid;
+            place-items: center;
+            padding: 24px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .card {
+            width: min(560px,92vw);
+            background: var(--panel);
+            border: 1px solid var(--edge);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(6px);
+            padding: 28px 26px;
+        }
+
+        .title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 0 0 6px 0;
+            font-weight: 800;
+            font-size: 1.15rem;
+            color: var(--accent);
+            text-shadow: 0 0 10px rgba(38,255,147,0.18)
+        }
+
+        .chip {
+            font-size: .75rem;
+            padding: 2px 8px;
+            border-radius: 999px;
+            border: 1px solid #0f3d2c;
+            color: #06110e;
+            background: linear-gradient(180deg,var(--accent),var(--accent-2));
+            box-shadow: inset 0 -4px 10px rgba(0,0,0,0.18)
+        }
+
+        .subtitle {
+            margin: 0 0 16px 0;
+            color: var(--muted);
+            font-size: .95rem
+        }
+
+        .grid {
+            display: grid;
+            gap: 14px
+        }
+
+        label {
+            font-size: .84rem;
+            color: var(--muted)
+        }
+
+        .row {
+            display: grid;
+            gap: 8px
+        }
+
+        .field {
+            position: relative
+        }
+
+        .ico {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            opacity: .7;
+            user-select: none
+        }
+
+        input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 12px 12px 12px 40px;
+            font-size: .96rem;
+            color: var(--txt);
+            background: rgba(6,12,10,0.7);
+            border: 1px solid #164d39;
+            border-radius: 12px;
+            outline: none;
+            box-shadow: inset 0 0 0 1px rgba(38,255,147,0.07);
+            transition: border-color .15s, box-shadow .15s, background .15s;
+        }
+
+        input:focus {
+            border-color: #21e286;
+            box-shadow: 0 0 0 3px rgba(33,226,134,0.18), inset 0 0 0 1px rgba(38,255,147,0.12)
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            justify-content: flex-start;
+            margin-top: 6px
+        }
+
+        .btn {
+            appearance: none;
+            cursor: pointer;
+            border: 1px solid #0f3d2c;
+            color: #06110e;
+            background: linear-gradient(180deg,var(--accent),var(--accent-2));
+            font-weight: 800;
+            letter-spacing: .2px;
+            padding: 12px 16px;
+            border-radius: 12px;
+            box-shadow: 0 10px 28px rgba(38,255,147,0.20), inset 0 -6px 16px rgba(0,0,0,0.15);
+            transition: transform .05s, box-shadow .15s, filter .15s;
+        }
+
+            .btn:hover {
+                transform: translateY(-1px);
+                filter: saturate(1.08);
+                box-shadow: 0 14px 36px rgba(38,255,147,0.28)
+            }
+
+            .btn:active {
+                transform: translateY(0)
+            }
+
+        .status {
+            min-height: 22px;
+            font-size: .92rem
+        }
+
+        .ok {
+            color: var(--accent-2)
+        }
+
+        .bad {
+            color: var(--error)
+        }
+
+        .links {
+            margin-top: 18px;
+            display: flex;
+            gap: 14px;
+            flex-wrap: wrap
+        }
+
+        .a {
+            color: #a9ffd0;
+            text-decoration: none;
+            font-size: .9rem;
+            border-bottom: 1px dashed rgba(169,255,208,0.35);
+            padding-bottom: 2px
+        }
+
+            .a:hover {
+                color: #d7ffe9;
+                border-bottom-color: rgba(215,255,233,0.7)
+            }
+
+        .hr {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #204b3a, transparent);
+            margin: 14px 0
+        }
+    </style>
 </head>
-<body>
-    <script>sendLog('[' + pageName + '] Now starting <body>');</script>
+<body class="fx">
+    <!-- Falling-characters canvas -->
+    <canvas id="rain"></canvas>
 
-    <h2><a href="index.html">Home</a></h2>
-    <h2><a href="syslib_page.html">syslib_page</a></h2>
+    <!-- Page content -->
+    <div class="wrap">
+        <form class="card" id="loginForm" autocomplete="on">
+            <h1 class="title">▮▮ Member Login <span class="chip" title="Secure Gateway">SECURE</span></h1>
+            <p class="subtitle">Authorized access only — events are logged.</p>
 
-    <h1>Member's Login Page</h1>
-    <h1 id="status"></h1>
-    <label>username <input id="username" type="text" value="MikeBeaudet" /></label>
-    <label>password <input id="password" type="text" value="12345" /></label>
+            <div class="grid">
+                <div class="row">
+                    <label for="username">Username</label>
+                    <div class="field">
+                        <span class="ico">👤</span>
+                        <input id="username" type="text" name="username" value="MikeBeaudet" autofocus />
+                    </div>
+                </div>
 
-    <button id="loginButton">Login</button>
+                <div class="row">
+                    <label for="password">Password</label>
+                    <div class="field">
+                        <span class="ico">🔑</span>
+                        <input id="password" type="password" name="password" value="12345" />
+                    </div>
+                </div>
 
-    <script>
-        // Login logic
-        sendLog('[' + pageName + '] Members Login page loaded');
-        const username = document.getElementById("username");
-        const password = document.getElementById("password");
-        const statusEl = document.getElementById("status");
-        const loginButton = document.getElementById("loginButton");
+                <div class="actions">
+                    <button type="button" class="btn" id="loginButton" aria-label="Login">Login</button>
+                    <div id="status" class="status" aria-live="polite"></div>
+                </div>
+            </div>
 
-        loginButton.onclick = function () {
-            const user = username.value.trim();
-            const pass = password.value.trim();
+            <div class="hr"></div>
 
-            sendLog(`[` + pageName + `] Attempting login with , ${user}, ${pass}`);
-
-            if (user === "MikeBeaudet" && pass === "12345") {
-                localStorage.setItem("app_user", user);            // <-- save
-                window.location.href = "members_page.html?user=" + encodeURIComponent(user); statusEl.textContent = "Login successful!";
-                statusEl.style.color = "green";
-                setTimeout(() =>
-                    window.location.href = "members_page.html", 300); // go to index
-            } else {
-                statusEl.textContent = "Login failed. Please try again.";
-                statusEl.style.color = "red";
-            }
-        };
-    </script>
-
-    <br /><br />
-
-    <!-- Video player -->
-    <aside class="media-side">
-        <br /><br />
-        <p><h1><b><strong>My Magic vidéos!</strong></b></h1></p>
-
-        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-            <input type="file" id="videoInput" accept="video/*" />
-            <button id="useDefaultBtn" type="button">Use default</button>
-            <span id="videoName" style="font-size:14px; opacity:.8;"></span>
-        </div>
-        <!-- Single video element -->
-        <video id="videoPlayer"
-               controls
-               muted
-               playsinline
-               preload="metadata"
-               style="width:50%; max-width:100%; margin-top:10px; border-radius:8px;">
-            Your browser does not support the video tag.
-        </video>
-    </aside>
+            <div class="links">
+                <a class="a" href="index.html">← Home</a>
+                <a class="a" href="syslib_page.html">syslib_page</a>
+            </div>
+        </form>
+    </div>
 
     <script>
+        /* ============================================
+           LOGIN (simple demo)
+           ============================================ */
+        (function () {
+            const VALID_USER = 'MikeBeaudet';
+            const VALID_PASS = '12345';
+            const NEXT_PAGE = 'members_page.html';
 
-        document.addEventListener('DOMContentLoaded', () => {
-            const DEFAULT_SRC = '/assets/Chink-a-chink v7.mp4'; // your default
-            const video = document.getElementById('videoPlayer');
-            const input = document.getElementById('videoInput');
-            const btn = document.getElementById('useDefaultBtn'); // if you added it
-            const name = document.getElementById('videoName');     // if you added it
+            const $ = id => document.getElementById(id);
+            const username = $('username');
+            const password = $('password');
+            const statusEl = $('status');
+            const loginBtn = $('loginButton');
+            const form = $('loginForm');
 
-            let currentBlobURL = null; // track only the active blob url (if any)
+            function setStatus(msg, ok) {
+                statusEl.textContent = msg || '';
+                statusEl.className = 'status ' + (ok ? 'ok' : 'bad');
+            }
+            function goNext(user) {
+                try { localStorage.setItem('app_user', user); } catch { }
+                setStatus('Login successful. Redirecting…', true);
+                const nextUrl = new URL(NEXT_PAGE, window.location.href);
+                nextUrl.searchParams.set('user', user);
+                setTimeout(() => { window.location.href = nextUrl.href; }, 300);
+            }
+            function tryLogin() {
+                const user = (username.value || '').trim();
+                const pass = (password.value || '').trim();
+                if (!user || !pass) { setStatus('Please enter username and password.', false); return; }
+                if (user === VALID_USER && pass === VALID_PASS) goNext(user);
+                else setStatus('Login failed. Check your credentials.', false);
+            }
+            loginBtn.addEventListener('click', tryLogin);
+            form.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); tryLogin(); } });
+            try { const prev = localStorage.getItem('app_user'); if (prev && !username.value) username.value = prev; } catch { }
+        })();
 
-            function setLabel(label) { if (name) name.textContent = label || ''; }
+        /* ============================================
+           STABLE MATRIX-LIKE RAIN (no flicker)
+           ============================================ */
+        (function () {
+            // ======== TUNABLES ========
+            const FONT_SIZE = 25;    // px per row
+            const ROWS_PER_SEC = 4;     // speed (3 slow … 12 fast)
+            const DENSITY = 1.0;  // fraction of active columns (0..1)
+            const TRAIL_STRENGTH = 0.01;  // destination-out fade per frame (0.04–0.10)
+            const HIGHLIGHT_PROB = 0.015; // bright glyph chance
+            const MAX_DT = 0.05;  // clamp seconds between frames
 
-            function playSrc(src, label, isBlob = false) {
-                // Revoke the PREVIOUS blob (if any), not the new one
-                if (currentBlobURL) {
-                    URL.revokeObjectURL(currentBlobURL);
-                    currentBlobURL = null;
-                }
+            const canvas = document.getElementById('rain');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            // Offscreen for fade (helps avoid flash clears)
+            const off = document.createElement('canvas');
+            const octx = off.getContext('2d');
 
-                video.src = src;
-                video.load();
+            const CHARS = (
+                // ── Numeric & Hex ───────────────────────────────
+                '0123456789ABCDEF' +
+                // ── Latin Alphabet ──────────────────────────────
+                'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz' +
+                // ── Greek Letters (Upper + Lower) ───────────────
+                'ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩ' +   // upper
+                'αβγδεζηθικλμνξοπρστυφχψω' +   // lower
+                // ── Hacker Symbols & Operators ─────────────────
+                '@#$%&*+=-_;:<>?/|\\[]{}~^`!"\'.,()' +
+                // ── Block / Tech Shapes ────────────────────────
+                '▮▯▰▱▢▣▤▥▦▧▨▩▒▓█▀▄▌▐░▒▓' +
+                // ── Katakana (Matrix DNA) ──────────────────────
+                'アカサタナハマヤラワガザダバパヲン'
+            ).split('');
 
-                const p = video.play();
-                if (p && typeof p.catch === 'function') {
-                    p.catch(err => {
-                        // mobile may require a user tap; show controls + message if needed
-                        console.warn('Autoplay blocked:', err);
-                    });
-                }
 
-                setLabel(label);
-                if (isBlob) currentBlobURL = src; // remember only if this src is a blob
+            let W = 0, H = 0, COLS = 0, ROWS = 0;
+            let rowAcc = [], rowIdx = [], active = [];
+
+            function rebuildActive() { active = Array.from({ length: COLS }, () => Math.random() < DENSITY); }
+
+            function resize() {
+                const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+                W = Math.floor(window.innerWidth);
+                H = Math.floor(window.innerHeight);
+
+                // main canvas
+                canvas.width = Math.floor(W * dpr);
+                canvas.height = Math.floor(H * dpr);
+                ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+                // offscreen buffer (same CSS pixels)
+                off.width = W; off.height = H;
+
+                ctx.font = `${FONT_SIZE}px ui-monospace, monospace`;
+                octx.font = `${FONT_SIZE}px ui-monospace, monospace`;
+                ctx.textBaseline = 'top';
+                octx.textBaseline = 'top';
+
+                COLS = Math.ceil(W / FONT_SIZE);
+                ROWS = Math.ceil(H / FONT_SIZE);
+
+                rowAcc = new Array(COLS).fill(0);
+                rowIdx = new Array(COLS).fill(0).map(() => Math.floor(Math.random() * ROWS));
+                rebuildActive();
+
+                // clear buffers
+                ctx.clearRect(0, 0, W, H);
+                octx.clearRect(0, 0, W, H);
             }
 
-            // Load default on start
-            playSrc(DEFAULT_SRC, `Default: ${DEFAULT_SRC}`, false);
+            let prevTs = 0;
+            function tick(ts) {
+                if (!prevTs) prevTs = ts;
+                let dt = (ts - prevTs) / 1000;
+                prevTs = ts;
+                if (dt > MAX_DT) dt = MAX_DT;
 
-            // File picker -> play selected file
-            input.addEventListener('change', () => {
-                const file = input.files && input.files[0];
-                if (!file) return;
-                const url = URL.createObjectURL(file);
-                playSrc(url, `File: ${file.name}`, true);
-            });
+                // 1) Fade the offscreen buffer gently (destination-out)
+                octx.globalCompositeOperation = 'destination-out';
+                octx.fillStyle = `rgba(0,0,0,${TRAIL_STRENGTH})`;
+                octx.fillRect(0, 0, W, H);
+                octx.globalCompositeOperation = 'source-over';
 
-            // Optional "Use default" button
-            if (btn) {
-                btn.addEventListener('click', () => {
-                    input.value = ''; // let user reselect same file later
-                    playSrc(DEFAULT_SRC, `Default: ${DEFAULT_SRC}`, false);
-                });
+                // 2) Advance drops by fixed rows (time-based)
+                const advance = ROWS_PER_SEC * dt;
+                for (let i = 0; i < COLS; i++) {
+                    if (!active[i]) continue;
+                    rowAcc[i] += advance;
+
+                    if (rowAcc[i] >= 1) {
+                        const steps = (rowAcc[i] | 0);
+                        rowAcc[i] -= steps;
+                        rowIdx[i] += steps;
+
+                        const x = i * FONT_SIZE | 0;
+                        const y = (rowIdx[i] + 1) * FONT_SIZE | 0;
+
+                        // Draw glyph to offscreen buffer (integer-aligned)
+                        octx.fillStyle = Math.random() < HIGHLIGHT_PROB ? '#caffd5' : '#26ff93';
+                        const ch = CHARS[(Math.random() * CHARS.length) | 0];
+                        octx.fillText(ch, x, y);
+
+                        // Recycle after screen bottom (with slight randomness)
+                        if (y > H + FONT_SIZE && Math.random() > 0.98) {
+                            rowIdx[i] = 0;
+                            if (Math.random() < 0.02) active[i] = (Math.random() < DENSITY);
+                        }
+                    }
+                }
+
+                // 3) Blit offscreen to main once per frame (stable)
+                ctx.clearRect(0, 0, W, H);
+                ctx.drawImage(off, 0, 0);
+
+                requestAnimationFrame(tick);
             }
-        });
+
+            window.addEventListener('resize', resize, { passive: true });
+            resize();
+            requestAnimationFrame(tick);
+        })();
     </script>
-
 </body>
 </html>

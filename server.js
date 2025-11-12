@@ -452,7 +452,7 @@ server.get("/scan_bluetooth", (req, res) => {
 // /scan_networks
 const wifi = require("node-wifi");
 wifi.init({ iface: null }); // Auto-detect
-server.get("/scan_networks", async (req, res) => {
+server.get("/networks_scan", async (req, res) => {
     log.section('/scan_networks');
     try {
         const networks = await wifi.scan();
@@ -475,8 +475,8 @@ server.get('/network/connections', async (req, res) => {
     }
 });
 
-//  /api/raw
-server.get('/api/raw', async (req, res) => {
+//  /network_inspector
+server.get('/network_inspector', async (req, res) => {
     try {
         const raw = await getRawOSOutput();
         res.type('text/plain').send(raw);
@@ -595,7 +595,7 @@ server.get('/video_stream', async (req, res) => {
         res.setHeader('Content-Length', chunkSize);
         res.setHeader('Content-Type', contentType);
 
-        log.ok(`Streaming ${fileName} bytes ${start}-${end}/${fileSize}`);
+        log.ok(`Streaming ${fileName} bytes ${fileSize}`);
         const stream = fs.createReadStream(abs, { start, end });
         stream.pipe(res);
     } catch (err) {

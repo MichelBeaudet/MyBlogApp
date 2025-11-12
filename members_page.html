@@ -50,5 +50,20 @@
 
     </div>
 
+
+    <h2>Send an Email</h2>
+    <button onclick="sendEmail()">Send Email</button>
+    <script>
+        function sendEmail() {
+            const subject = encodeURIComponent("Hello from my site");
+            const body = encodeURIComponent("This is a test message.");
+            const recipient = "example@email.com";
+
+            // Opens the default email client with prefilled fields
+            window.location.href = `mailto:${recipient}?subject=${subject}&body=${body}`;
+        }
+    </script>
+
+
 </body>
 </html>

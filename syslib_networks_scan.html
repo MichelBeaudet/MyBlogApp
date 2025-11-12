@@ -186,7 +186,7 @@
             scanBtn.textContent = "Scanning...";
             statusText.textContent = "Scanning for nearby networks...";
             try {
-                const res = await fetch("/scan_networks");
+                const res = await fetch("/networks_scan");
                 const data = await res.json();
                 tbody.innerHTML = "";
                 if (data.length === 0) {

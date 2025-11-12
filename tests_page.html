@@ -2,28 +2,28 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
     <meta charset="utf-8" />
-    <title>Request page</title>
+    <title>Tests Page</title>
     <script src="js/sendLog.js"></script>
 </head>
 <body>
     <script>sendLog('[' + pageName + '] Now starting <body>');</script>
 
-    <h1>Request page to do some tests</h1>
+    <h1>Tests Page</h1>
 
     <h1 id="clock"> MyClock</h1>
     <label id="mylabel">label<br></label>
 
-    <section id="request_tests">
-        <h2>Available Tests to be done !</h2>
+    <section id="tests_list">
+        <h2>Tests to be done !</h2>
         <ul>
             <li>Web GET &lt;--- Server POST</li>
             <li>Web POST ---&gt; Server GET</li>
         </ul>
     </section>
 
-
     <!-- Start scripts -->
     <script src="./js/sendLog.js"></script>
+    <!-- clock script -->
     <script>
         //clock
         const clockElement = document.getElementById('clock');

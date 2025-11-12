@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Les Téléportistes | The Teleportists</title>
+    <link rel="stylesheet" href="teleportation_page.css">
+</head>
+<body>
+
+    <!-- Header / Navigation -->
+    <header>
+        <h1>Les Téléportistes / The Teleportists</h1>
+        <nav>
+            <ul>
+                <li><a href="#about">About</a></li>
+                <li><a href="#services">Services</a></li>
+                <li><a href="#shop">Shop</a></li>
+                <li><a href="#reservation">Travel</a></li>
+                <li><a href="#articles">Articles</a></li>
+                <li><a href="#references">References</a></li>
+                <li><a href="#contact">Contact</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <!-- Hero Section -->
+    <section id="hero">
+        <h2>Teleportation Begins Here</h2>
+        <p>Bridging galaxies, times, and dimensions — responsibly.</p>
+        <a href="#reservation" class="btn">Reserve Your Jump</a>
+    </section>
+
+    <!-- About -->
+    <section id="about">
+        <h2>About</h2>
+        <p>Founded in 2089, <strong>Les Téléportistes</strong> pioneer quantum displacement technology — merging physics, ethics, and consciousness to redefine movement itself.</p>
+    </section>
+
+    <!-- Services -->
+    <section id="services">
+        <h2>Services</h2>
+        <ul>
+            <li><strong>Quantum Displacement:</strong> Instant relocation through entangled particle fields.</li>
+            <li><strong>Temporal Shifting:</strong> Regulated time-phase traversal for observation and retrieval missions.</li>
+            <li><strong>Reality Anchoring:</strong> Identity coherence maintenance across dimensions.</li>
+        </ul>
+    </section>
+
+    <!-- Shop -->
+    <section id="shop">
+        <h2>Shop</h2>
+        <div class="grid">
+            <div class="card">
+                <h3>Quantum Beacon</h3>
+                <p>Personal recall device for emergency re-materialization.</p>
+                <a href="#" class="btn">Buy</a>
+            </div>
+            <div class="card">
+                <h3>ChronoSuit</h3>
+                <p>Protective suit for stable time-phase traversal.</p>
+                <a href="#" class="btn">Buy</a>
+            </div>
+            <div class="card">
+                <h3>Phase Anchor</h3>
+                <p>Portable field stabilizer ensuring timeline coherence.</p>
+                <a href="#" class="btn">Buy</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Reservation -->
+    <section id="reservation">
+        <h2>Space-Time Travel Reservation</h2>
+        <form id="reservation-form">
+            <label>Full Name:</label>
+            <input type="text" name="name" required>
+
+            <label>Destination / Time Period:</label>
+            <input type="text" name="destination" required>
+
+            <label>Purpose:</label>
+            <textarea name="purpose" rows="4"></textarea>
+
+            <button type="submit">Reserve Now</button>
+        </form>
+    </section>
+
+    <!-- Articles -->
+    <section id="articles">
+        <h2>Articles</h2>
+        <p>Explorations in teleportation ethics, consciousness persistence, and temporal ontology.</p>
+    </section>
+
+    <!-- References -->
+    <section id="references">
+        <h2>References</h2>
+        <ul>
+            <li>“Teleportation Ethics” — Temporal Review, 2091</li>
+            <li>“Quantum Cohesion in Human Transport” — Journal of Entanglement, 2094</li>
+            <li>“Philosophy of Presence” — MetaScience Quarterly, 2097</li>
+        </ul>
+    </section>
+
+    <!-- Contact -->
+    <section id="contact">
+        <h2>Contact</h2>
+        <p>Email: <a href="mailto:contact@teleportists.lab">contact@teleportists.lab</a></p>
+        <p>Quantum Facility 9, Lagrange Orbit, Earth–Mars Sector</p>
+    </section>
+
+    <footer>
+        <p>© 2089–2099 Les Téléportistes | The Teleportists — All Rights Reserved</p>
+    </footer>
+
+    <!-- Reservation Script -->
+    <script>
+        document.getElementById("reservation-form").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const formData = {
+                name: e.target.name.value,
+                destination: e.target.destination.value,
+                purpose: e.target.purpose.value
+            };
+            const res = await fetch("/api/reserve", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(formData)
+            });
+            const data = await res.json();
+            alert(data.message || "Reservation received!");
+            e.target.reset();
+        });
+    </script>
+
+</body>
+</html>

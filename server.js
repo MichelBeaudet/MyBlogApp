@@ -86,11 +86,81 @@ server.get('/admin/console/clear', (_req, res) => {
     res.json({ ok: true });
 });
 
-// /run_python 
+// /runPythonExec
+function runPythonExec(scriptPath, cb) {
+    // -u = unbuffered (flushes prints), helps reduce chunking issues
+    const cmd = `"C:\\Python\\Python313\\python.exe" -u "${scriptPath}"`;
+
+    exec(cmd, {
+        cwd: __dirname,
+        windowsHide: true,
+        // increase buffer to 64MB (adjust if needed)
+        maxBuffer: 64 * 1024 * 1024
+    }, (err, stdout, stderr) => {
+        if (err) return cb(err);
+        cb(null, { stdout, stderr });
+    });
+}
+// /run_python filepath
 server.post('/run_python', (req, res) => {
     log.section('/run_python');
+    // const scriptPath = 'C:/MyProjects/VS Studio Projects/MyCellsSim/MyCellsSim.py';
+    const PYTHON_EXE = 'C:/Users/miche/AppData/Local/Programs/Python/Python312/python.exe';
     const PYTHON_CMD = process.env.PYTHON_CMD || 'python';
-    const scriptPath = `C:/MyProjects/python_work/MyNeuronsSim/MyNeuronsSim.py`;
+    const scriptPath = `C:/MyProjects/VS Studio Projects/MyCellsSim/MyCellsSim.py`;
+    log.ok(`${PYTHON_CMD} ${scriptPath}`);
+
+    const py = spawn(PYTHON_EXE, ['-u', scriptPath], {
+            cwd: __dirname,
+            windowsHide: true
+        });
+
+    let stdoutData = '';
+    let stderrData = '';
+    let responded = false;
+
+    // Single-exit responder
+    const safeReply = (status, body) => {
+        if (responded) return;
+        responded = true;
+        if (!res.headersSent) res.status(status).json(body);
+        // Ensure no more output arrives after we’ve replied
+        try { py.kill('SIGTERM'); } catch { }
+    };
+
+    // If client disconnects, stop the child to avoid late writes
+    req.on('aborted', () => {
+        log.warn('Client aborted request; killing python process.');
+        try { py.kill('SIGTERM'); } catch { }
+    });
+
+    py.stdout.setEncoding('utf8');
+    py.stderr.setEncoding('utf8');
+
+    py.stdout.on('data', chunk => { stdoutData += chunk; });
+    py.stderr.on('data', chunk => { stderrData += chunk; });
+
+    // Use .once so we don’t fire twice
+    py.once('error', (err) => {
+        log.err(`Python spawn error: ${err.message}`);
+        safeReply(500, { error: 'python_spawn_error', detail: err.message });
+    });
+
+    py.once('close', (code, signal) => {
+        log.ok(`Python exited code=${code} signal=${signal ?? 'null'}`);
+        const ok = code === 0;
+        safeReply(200, { ok, code, signal: signal ?? null, stdout: stdoutData.trim(), stderr: stderrData.trim() });
+    });
+
+
+    log.ok('Python script execution initiated');
+});
+
+// /run_python _v0
+server.post('/run_python_v0', (req, res) => {
+    log.section('/run_python');
+    const PYTHON_CMD = process.env.PYTHON_CMD || 'python';
+    const scriptPath = `C:/MyProjects/VS Studio Projects/MyCellsSim/MyCellsSim.py`;
 
     log.ok(`Executing Python script: ${scriptPath} with ${PYTHON_CMD}`);
 
@@ -196,8 +266,6 @@ server.get('/clear_sys_props_log', (_req, res) => {
     log.section('clearing sys_props_log...');
     res.json({ ok: true });
 });
-
-// ----------------- Ports integration ----------------------------------------
 
 // Import the new syslib_ports module (must exist at ./js/syslib_ports.js)
 let syslibPorts;
@@ -384,7 +452,6 @@ server.get("/scan_bluetooth", (req, res) => {
 // /scan_networks
 const wifi = require("node-wifi");
 wifi.init({ iface: null }); // Auto-detect
-
 server.get("/scan_networks", async (req, res) => {
     log.section('/scan_networks');
     try {
@@ -394,6 +461,149 @@ server.get("/scan_networks", async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
+
+//  /network/connections
+const { collectConnections, getRawOSOutput } = require('./lib/collector');
+server.get('/network/connections', async (req, res) => {
+    log.section('/network/connections');
+    try {
+        const result = await collectConnections();
+        log.warning('Collected connections:', result.count);
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({ ok: false, error: err.message });
+    }
+});
+
+//  /api/raw
+server.get('/api/raw', async (req, res) => {
+    try {
+        const raw = await getRawOSOutput();
+        res.type('text/plain').send(raw);
+    } catch (err) {
+        res.status(500).type('text/plain').send(err.message);
+    }
+});
+
+// === 1) Configure your fixed folder here (escape backslashes in JS) ===
+const BASE_DIR = 'G:\\MyMagic\\Videos Mike - 25 GB';
+// === 2) Basic video extension filter (extend if needed) ===
+const VIDEO_EXTS = new Set(['.mp4', '.mkv', '.avi', '.mov', '.wmv', '.m4v', '.webm']);
+// === 3) Simple extension->MIME map (good enough for common cases) ===
+const MIME_BY_EXT = {
+    '.mp4': 'video/mp4',
+    '.mkv': 'video/x-matroska',
+    '.avi': 'video/x-msvideo',
+    '.mov': 'video/quicktime',
+    '.wmv': 'video/x-ms-wmv',
+    '.m4v': 'video/x-m4v',
+    '.webm': 'video/webm',
+};
+
+/**
+ * Utility: ensure a client-provided file name resolves inside BASE_DIR.
+ * This blocks path traversal (e.g., "../../Windows/system32").
+ */
+function safeResolveInBaseDir(fileName) {
+    // Disallow path separators outright (we list top-level only in this version)
+    if (fileName.includes('/') || fileName.includes('\\')) return null;
+
+    const abs = path.join(BASE_DIR, fileName);
+    // Normalize and verify it still starts with BASE_DIR
+    const normBase = path.resolve(BASE_DIR);
+    const normAbs = path.resolve(abs);
+    if (!normAbs.startsWith(normBase)) return null;
+    return normAbs;
+}
+//   videos_list
+server.get('/video_list', async (req, res) => {
+    log.section('/videos_list');
+    try {
+        const entries = await fs.promises.readdir(BASE_DIR, { withFileTypes: true });
+        const files = [];
+        for (const e of entries) {
+            if (!e.isFile()) continue; // top-level files only (no recursion)
+            const ext = path.extname(e.name).toLowerCase();
+            if (!VIDEO_EXTS.has(ext)) continue;
+
+            const abs = path.join(BASE_DIR, e.name);
+            const stat = await fs.promises.stat(abs);
+            files.push({
+                name: e.name,
+                size: stat.size,
+                mtime: stat.mtimeMs,
+                ext,
+            });
+        }
+
+        // Sort by name ascending (simple, deterministic)
+        files.sort((a, b) => a.name.localeCompare(b.name, 'en', { numeric: true, sensitivity: 'base' }));
+        res.json(files);
+    } catch (err) {
+        console.error('Error listing files:', err);
+        res.status(500).json({ error: 'Failed to list folder.' });
+    }
+});
+
+// /stream?name=<fileName>
+server.get('/video_stream', async (req, res) => {
+    log.section('/stream');
+    try {
+        const fileName = req.query.name;
+        if (!fileName || typeof fileName !== 'string') {
+            return res.status(400).send('Missing "name" query parameter.');
+        }
+
+        const abs = safeResolveInBaseDir(fileName);
+        if (!abs) return res.status(403).send('Forbidden.');
+
+        const ext = path.extname(abs).toLowerCase();
+        if (!VIDEO_EXTS.has(ext)) return res.status(415).send('Unsupported media type.');
+
+        const stat = await fs.promises.stat(abs);
+        const fileSize = stat.size;
+        const contentType = MIME_BY_EXT[ext] || 'application/octet-stream';
+
+        // Handle HTTP Range for seeking/scrubbing
+        const range = req.headers.range;
+        if (!range) {
+            // No range: serve the whole file (some players still handle this)
+            res.setHeader('Content-Type', contentType);
+            res.setHeader('Content-Length', fileSize);
+            const stream = fs.createReadStream(abs);
+            stream.pipe(res);
+            return;
+        }
+
+        // Example Range header: "bytes=12345-"
+        const match = range.match(/bytes=(\d+)-(\d+)?/);
+        if (!match) {
+            return res.status(416).send('Malformed Range header.');
+        }
+
+        const start = parseInt(match[1], 10);
+        const end = match[2] ? parseInt(match[2], 10) : fileSize - 1;
+
+        if (Number.isNaN(start) || Number.isNaN(end) || start > end || end >= fileSize) {
+            return res.status(416).send('Range Not Satisfiable');
+        }
+
+        const chunkSize = end - start + 1;
+        res.status(206);
+        res.setHeader('Content-Range', `bytes ${start}-${end}/${fileSize}`);
+        res.setHeader('Accept-Ranges', 'bytes');
+        res.setHeader('Content-Length', chunkSize);
+        res.setHeader('Content-Type', contentType);
+
+        log.ok(`Streaming ${fileName} bytes ${start}-${end}/${fileSize}`);
+        const stream = fs.createReadStream(abs, { start, end });
+        stream.pipe(res);
+    } catch (err) {
+        console.error('Error streaming file:', err);
+        res.status(500).send('Failed to stream file.');
+    }
+});
+
 
 // /teapot (418)
 server.get('/teapot', (req, res) => {

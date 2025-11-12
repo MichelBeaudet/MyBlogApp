@@ -1,0 +1,480 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>MyMagic — Video Gallery</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <style>
+        /* === Minimal, light, modern look (no frameworks) === */
+
+        :root {
+            --bg: #f7f7f9;
+            --panel: #ffffff;
+            --text: #1a1a1a;
+            --muted: #6b7280;
+            --accent: #0ea5e9; /* sky-ish blue */
+            --accent-2: #22c55e; /* green for action */
+            --border: #e5e7eb;
+            --shadow: 0 6px 24px rgba(0,0,0,0.08);
+            --radius: 16px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+        }
+
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            backdrop-filter: blur(10px);
+            background: rgba(247,247,249,0.8);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 16px;
+        }
+
+        .topbar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            justify-content: space-between;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+            .brand .dot {
+                width: 12px;
+                height: 12px;
+                border-radius: 50%;
+                background: var(--accent);
+                display: inline-block;
+            }
+
+        .controls {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        input[type="text"] {
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: #fff;
+            min-width: 220px;
+            outline: none;
+        }
+
+        .btn {
+            padding: 10px 14px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: #fff;
+            cursor: pointer;
+            transition: transform .05s ease, box-shadow .15s ease;
+        }
+
+            .btn:hover {
+                box-shadow: var(--shadow);
+            }
+
+            .btn.primary {
+                background: var(--accent);
+                color: #fff;
+                border-color: transparent;
+            }
+
+            .btn.success {
+                background: var(--accent-2);
+                color: #fff;
+                border-color: transparent;
+            }
+
+        main {
+            display: grid;
+            grid-template-columns: 360px 1fr;
+            gap: 16px;
+            padding: 16px;
+        }
+
+        @media (max-width: 980px) {
+            main {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Left panel (player + local picker) */
+        .panel {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 16px;
+        }
+
+        .section-title {
+            font-weight: 700;
+            margin: 6px 0 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .hint {
+            color: var(--muted);
+            font-size: .92rem;
+        }
+
+        video {
+            width: 100%;
+            height: auto;
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+        }
+
+        .now-playing {
+            font-size: .95rem;
+            color: var(--muted);
+            margin-top: 8px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .dropzone {
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            padding: 14px;
+            text-align: center;
+            background: #fafafa;
+        }
+
+            .dropzone.dragover {
+                border-color: var(--accent);
+                background: #eef9ff;
+            }
+
+        /* Right panel (gallery grid) */
+        .grid {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            min-height: 400px;
+        }
+
+        .grid-toolbar {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+
+        .count {
+            color: var(--muted);
+            font-size: .92rem;
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 12px;
+        }
+
+        .card {
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 10px;
+            background: #fff;
+            cursor: pointer;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            transition: transform .06s ease, box-shadow .15s ease, border-color .15s ease;
+            min-height: 68px;
+        }
+
+            .card:hover {
+                transform: translateY(-2px);
+                box-shadow: var(--shadow);
+                border-color: #d1d5db;
+            }
+
+        .icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
+            display: grid;
+            place-items: center;
+            border: 1px solid var(--border);
+            background: #f3f4f6;
+            font-size: 20px;
+            user-select: none;
+        }
+
+        .meta {
+            min-width: 0;
+        }
+
+        .name {
+            font-size: .95rem;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .sub {
+            font-size: .85rem;
+            color: var(--muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        footer {
+            text-align: center;
+            color: var(--muted);
+            font-size: .9rem;
+            padding: 18px 0 28px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container topbar">
+            <div class="brand">
+                <span class="dot"></span>
+                <span>MyMagic — Video Gallery</span>
+            </div>
+            <div class="controls">
+                <!-- Global search filters the right-side gallery -->
+                <input id="search" type="text" placeholder="Filter by name… (e.g. 'practice', '2024-07')" />
+                <button class="btn" id="openFolderBtn" title="Open Windows Explorer for the fixed folder">Open folder</button>
+                <!-- Local files input: allows playing videos from anywhere without uploading -->
+                <label class="btn success" for="localPicker">Choose files…</label>
+                <input id="localPicker" type="file" accept="video/*" multiple style="display:none" />
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- Left panel: video player and local picker -->
+        <section class="panel">
+            <div class="section-title">▶️ Player</div>
+            <video id="player" controls preload="metadata"></video>
+            <div id="nowPlaying" class="now-playing">No video loaded.</div>
+
+            <div class="section-title" style="margin-top:16px;">🗂 Play from other folders</div>
+            <p class="hint" style="margin-top:0;">
+                Drop files here or use <em>Choose files…</em>. Nothing is uploaded — files play locally via a secure ObjectURL.
+            </p>
+            <div id="dropzone" class="dropzone">
+                Drag & drop video files here
+            </div>
+        </section>
+
+        <!-- Right panel: gallery -->
+        <section class="grid">
+            <div class="grid-toolbar">
+                <div class="section-title" style="margin:0">📁 “Videos Mike - 25 GB”</div>
+                <div id="count" class="count">Loading…</div>
+            </div>
+            <div id="cards" class="cards" aria-live="polite"></div>
+        </section>
+    </main>
+
+    <footer class="container">
+        Tip: Click any card to play. Use the search box to filter. The green “Choose files…” button lets you play videos from anywhere.
+    </footer>
+
+    <script>
+        /**
+         * Front-end script (vanilla JS)
+         * Responsibilities:
+         *  - Load gallery list from /api/list and render cards
+         *  - Play a video from server via /stream?name=...
+         *  - Play local files via ObjectURL (without uploading)
+         *  - Filter UI
+         *  - Simple Windows Explorer open (via location to /? and server console hints)
+         */
+
+        // === Elements
+        const player = document.getElementById('player');
+        const nowPlaying = document.getElementById('nowPlaying');
+        const cardsEl = document.getElementById('cards');
+        const countEl = document.getElementById('count');
+        const searchEl = document.getElementById('search');
+        const localPicker = document.getElementById('localPicker');
+        const dropzone = document.getElementById('dropzone');
+        const openFolderBtn = document.getElementById('openFolderBtn');
+
+        // === State
+        let allItems = [];   // {name, size, mtime, ext}
+        let filtered = [];
+
+        // === Utilities
+        function fmtBytes(n) {
+            if (n < 1024) return n + ' B';
+            const u = ['KB', 'MB', 'GB', 'TB'];
+            let i = -1;
+            do { n = n / 1024; i++; } while (n >= 1024 && i < u.length - 1);
+            return n.toFixed(n >= 100 ? 0 : n >= 10 ? 1 : 2) + ' ' + u[i];
+        }
+        function fmtDate(ms) {
+            const d = new Date(ms);
+            return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+        function setNowPlaying(text) { nowPlaying.textContent = text || 'No video loaded.'; }
+
+        // Build a single card DOM node
+        function makeCard(item) {
+            const card = document.createElement('button');
+            card.className = 'card';
+            card.type = 'button';
+            card.title = item.name;
+
+            const icon = document.createElement('div');
+            icon.className = 'icon';
+            icon.textContent = '🎬';
+
+            const meta = document.createElement('div');
+            meta.className = 'meta';
+
+            const name = document.createElement('div');
+            name.className = 'name';
+            name.textContent = item.name;
+
+            const sub = document.createElement('div');
+            sub.className = 'sub';
+            sub.textContent = `${fmtBytes(item.size)} • ${fmtDate(item.mtime)}`;
+
+            meta.appendChild(name);
+            meta.appendChild(sub);
+            card.appendChild(icon);
+            card.appendChild(meta);
+
+            // Clicking a card plays via server stream
+            card.addEventListener('click', () => {
+                // Use URL-encoded file name; backend streams with Range support
+                const url = `/video_stream?name=${encodeURIComponent(item.name)}`;
+                player.src = url;
+                player.play().catch(() => { /* ignore autoplay block */ });
+                setNowPlaying(`From gallery: ${item.name}`);
+                // Scroll to player on narrow screens
+                if (window.innerWidth < 980) player.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            });
+
+            return card;
+        }
+
+        // Render the current "filtered" list
+        function render() {
+            cardsEl.innerHTML = '';
+            for (const it of filtered) {
+                cardsEl.appendChild(makeCard(it));
+            }
+            countEl.textContent = `${filtered.length} file(s)`;
+        }
+
+        // Apply search filter
+        function applyFilter() {
+            const q = (searchEl.value || '').trim().toLowerCase();
+            if (!q) {
+                filtered = allItems.slice();
+            } else {
+                filtered = allItems.filter(it => it.name.toLowerCase().includes(q));
+            }
+            render();
+        }
+
+        // Initial load
+        async function loadList() {
+            try {
+                countEl.textContent = 'Loading…';
+                const r = await fetch('/video_list');
+                if (!r.ok) throw new Error('Failed to fetch list');
+                const data = await r.json();
+                allItems = Array.isArray(data) ? data : [];
+                filtered = allItems.slice();
+                render();
+            } catch (e) {
+                console.error(e);
+                countEl.textContent = 'Failed to load.';
+            }
+        }
+
+        // Local files: play without uploading (ObjectURL)
+        function playLocalFile(file) {
+            const url = URL.createObjectURL(file);
+            player.src = url;
+            player.play().catch(() => { });
+            setNowPlaying(`From local: ${file.name}`);
+        }
+
+        // === Wire up events ===
+        searchEl.addEventListener('input', applyFilter);
+
+        localPicker.addEventListener('change', (e) => {
+            const files = e.target.files;
+            if (!files || !files.length) return;
+            // Play the first selected; you can extend to build a temporary local grid if desired
+            playLocalFile(files[0]);
+        });
+
+        // Drag & drop local files
+        ;['dragenter', 'dragover'].forEach(evt => {
+            dropzone.addEventListener(evt, (e) => {
+                e.preventDefault(); e.stopPropagation();
+                dropzone.classList.add('dragover');
+            });
+        });
+        ;['dragleave', 'drop'].forEach(evt => {
+            dropzone.addEventListener(evt, (e) => {
+                e.preventDefault(); e.stopPropagation();
+                dropzone.classList.remove('dragover');
+            });
+        });
+        dropzone.addEventListener('drop', (e) => {
+            const files = e.dataTransfer?.files;
+            if (files && files.length) playLocalFile(files[0]);
+        });
+
+        // Open the fixed folder in Explorer (best-effort: we just tell user how to open;
+        // actual opening is typically done from the Node side via a dedicated endpoint if desired).
+        // For strictness (no extra server endpoint), we simply show a tip.
+        openFolderBtn.addEventListener('click', () => {
+            alert('To open the folder:\n\nG:\\MyMagic\\Videos Mike - 25 GB\n\nYou can also add an endpoint in server.js to call `start "" "<path>"` if you want this button to open Explorer automatically.');
+        });
+
+        // Kick off
+        loadList();
+    </script>
+</body>
+</html>

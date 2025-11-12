@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>Network Connections — Live Inspector</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+        :root {
+            --sticky-top: 64px;
+        }
+        /* default; JS will update exactly */
+        html, body {
+            margin: 0;
+            padding: 0;
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        body {
+            font: 14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans";
+        }
+
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background: var(--panel);
+            border-bottom: 1px solid var(--border);
+            padding: 12px 16px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .brand {
+            font-weight: 700;
+            letter-spacing: 0.2px;
+        }
+
+        .muted {
+            color: var(--muted);
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+            .toolbar label {
+                font-size: 12px;
+                color: var(--muted);
+            }
+
+            .toolbar input[type="search"],
+            .toolbar select {
+                padding: 6px 8px;
+                border: 1px solid var(--border);
+                border-radius: 6px;
+                background: #fff;
+                color: var(--text);
+            }
+
+            .toolbar button {
+                padding: 6px 10px;
+                border: 1px solid var(--border);
+                border-radius: 6px;
+                background: #fff;
+                cursor: pointer;
+            }
+
+                .toolbar button.primary {
+                    background: var(--accent);
+                    color: #fff;
+                    border-color: var(--accent);
+                }
+
+                .toolbar button:disabled {
+                    opacity: 0.6;
+                    cursor: not-allowed;
+                }
+
+        main {
+            padding: 16px;
+        }
+
+        .panel {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        thead th {
+            position: sticky;
+            top: var(--sticky-top); /* use dynamic offset */
+            z-index: 5; /* stay above rows */
+            background: #fff; /* solid white behind text */
+            border-bottom: 1px solid #e5e7eb; /* crisp divider */
+            box-shadow: 0 1px 0 rgba(0,0,0,0.03);
+        }
+
+        tbody td {
+            border-top: 1px solid var(--border);
+            padding: 8px 10px;
+            font-family: var(--mono);
+        }
+
+        tbody tr:hover {
+            background: #fafafa;
+        }
+
+        .state {
+            font-weight: 700;
+        }
+
+            .state.LISTEN, .state.LISTENING {
+                color: var(--ok);
+            }
+
+            .state.ESTABLISHED {
+                color: var(--accent);
+            }
+
+            .state.TIME_WAIT, .state.CLOSE_WAIT {
+                color: var(--warn);
+            }
+
+            .state.UNKNOWN, .state.UNSPECIFIED {
+                color: var(--muted);
+            }
+
+        .delta-new {
+            background: var(--row-new);
+        }
+
+        .delta-gone {
+            background: var(--row-gone);
+        }
+
+        .footer {
+            padding: 10px 0;
+            color: var(--muted);
+            font-size: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 3px 8px;
+            border-radius: 999px;
+            background: var(--accent-weak);
+            color: var(--accent);
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .kbd {
+            font-family: var(--mono);
+            border: 1px solid var(--border);
+            border-bottom-width: 2px;
+            padding: 1px 6px;
+            border-radius: 6px;
+            background: #fff;
+        }
+    </style>
+    <script src="js/sendLog.js"></script>
+</head>
+<body>
+    <script>sendLog('[' + pageName + '] Now starting <body>');</script>
+
+    <header>
+        <div class="brand">Network Connections <span class="muted">— Live Inspector</span></div>
+        <div class="toolbar">
+            <label>
+                Refresh:
+                <select id="refresh">
+                    <option value="0">Off</option>
+                    <option value="2000">2s</option>
+                    <option value="5000">5s</option>
+                    <option value="10000" selected>10s</option>
+                </select>
+            </label>
+            <label>
+                Protocol:
+                <select id="proto">
+                    <option value="">All</option>
+                    <option>TCP</option>
+                    <option>UDP</option>
+                </select>
+            </label>
+            <label>
+                State:
+                <select id="state">
+                    <option value="">All</option>
+                    <option>LISTEN</option>
+                    <option>LISTENING</option>
+                    <option>ESTABLISHED</option>
+                    <option>TIME_WAIT</option>
+                    <option>CLOSE_WAIT</option>
+                </select>
+            </label>
+            <label>
+                Search:
+                <input id="q" type="search" placeholder="address, port, PID, process, owner…" />
+            </label>
+            <label><input id="onlyRemote" type="checkbox" /> Only remote (exclude 0.0.0.0/* and ::)</label>
+            <button id="refreshNow" class="primary" title="Fetch now">Refresh now</button>
+            <button id="exportCsv">Export CSV</button>
+            <button id="exportJson">Export JSON</button>
+        </div>
+    </header>
+    <main>
+        <div class="panel">
+            <table id="grid" aria-label="Network connections">
+                <thead>
+                    <tr>
+                        <th data-key="protocol">Protocol</th>
+                        <th data-key="local">Local</th>
+                        <th data-key="remote">Remote</th>
+                        <th data-key="state">State</th>
+                        <th data-key="pid">PID</th>
+                        <th data-key="processName">Process</th>
+                        <th data-key="owner">Owner</th>
+                    </tr>
+                </thead>
+                <tbody id="tbody"></tbody>
+            </table>
+            <div class="footer">
+                <div>
+                    <span id="count" class="chip">0 connections</span>
+                    <span id="platform" class="muted"></span>
+                </div>
+                <div class="muted">Tip: click a header to sort • Press <span class="kbd">R</span> to refresh</div>
+            </div>
+        </div>
+    </main>
+    <script src="./js/syslib_network_inspector.js"></script>
+</body>
+</html>

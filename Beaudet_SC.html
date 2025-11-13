@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Beaudet Services Conseils</title>
+
+    <!--
+        We use PicoCSS as a minimal CSS framework for clean, responsive layout.
+        It provides the .container, .grid, forms, buttons, etc.
+    -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
+
+    <style>
+        /* -------------------------------------------------------------
+           GLOBAL BACKGROUND
+           ------------------------------------------------------------- */
+
+        /*
+            The body uses a human + corporate background image:
+            - people in a meeting (unsplash)
+            - full-screen cover
+            - slightly darkened via backdrop-filter for better contrast
+        */
+        body {
+            background-image: url("https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=1600&q=80");
+            background-size: cover; /* cover entire viewport */
+            background-position: center; /* center the image */
+            background-repeat: no-repeat; /* no tiling */
+            min-height: 100vh; /* at least full height */
+            backdrop-filter: brightness(0.9);
+        }
+
+        /* -------------------------------------------------------------
+           TOP LOGO (MAIN BRAND)
+           ------------------------------------------------------------- */
+
+        /*
+            Main logo at the top-left:
+            - block-level so it starts on its own line
+            - margin-left to move it slightly away from left edge
+            - smooth border-radius
+            - subtle border and soft shadow
+            - light background behind logo so it stays readable
+        */
+        .logo {
+            display: block; /* own line, left-aligned by default */
+            margin: 1.2rem 0 0.5rem 1.2rem; /* top, right, bottom, left spacing */
+            width: 150px; /* logo width */
+            height: auto; /* preserve aspect ratio */
+
+            border-radius: 12px; /* smooth rounded corners */
+            border: 2px solid rgba(255, 255, 255, 0.9); /* light border */
+
+            background-color: rgba(255, 255, 255, 0.8); /* soft white behind logo */
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25); /* soft outer shadow */
+        }
+
+        /* -------------------------------------------------------------
+           MAIN CARDS / CONTAINERS
+           ------------------------------------------------------------- */
+
+        /*
+            We keep the "card" look from your original design:
+            - semi-opaque white containers
+            - rounded corners and padding
+        */
+        main.container,
+        footer.container,
+        section[aria-label] .container,
+        section .container {
+            background-color: rgba(255, 255, 255, 0.92);
+            padding: 2rem;
+            border-radius: 12px;
+            margin-top: 2rem;
+        }
+
+        /*
+            Navigation bar:
+            - small white bar on top of the content
+            - slightly rounded
+            - we keep margin-top small because the logo is above,
+              on its own line (no overlap).
+        */
+        nav.container-fluid {
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 8px;
+            margin-top: 0.5rem;
+        }
+
+        /* -------------------------------------------------------------
+           INLINE LOGO INSIDE "À PROPOS" SECTION
+           ------------------------------------------------------------- */
+
+        /*
+            Smaller logo inside the content block:
+            - visually consistent with the top logo
+            - smaller border and radius
+        */
+        .logo-inline {
+            width: 70px;
+            height: auto;
+            border-radius: 6px;
+            border: 2px solid rgba(204, 204, 204, 0.9);
+            background-color: #ffffff;
+        }
+
+        /* -------------------------------------------------------------
+           LANGUAGE HANDLING (FR / EN)
+           ------------------------------------------------------------- */
+
+        /*
+            We keep two spans for every text: .lang-fr and .lang-en.
+            Only one language is visible at a time, controlled by
+            the data-lang attribute on <body>.
+        */
+
+        .lang-fr,
+        .lang-en {
+            margin: 0; /* avoid extra spacing due to block elements */
+        }
+
+        /* When body is in French mode, hide English parts */
+        body[data-lang="fr"] .lang-en {
+            display: none;
+        }
+
+        /* When body is in English mode, hide French parts */
+        body[data-lang="en"] .lang-fr {
+            display: none;
+        }
+
+        /* Small padding for the language toggle button in the nav */
+        #langToggle {
+            padding: 0.25rem 0.75rem;
+        }
+    </style>
+
+    <!--
+        Optional: your existing logging script.
+        It’s kept here in case you use sendLog() elsewhere.
+    -->
+    <script src="js/sendLog.js"></script>
+</head>
+
+<!--
+    We start in French by default via data-lang="fr".
+    The JS at the bottom will toggle between "fr" and "en".
+-->
+<body data-lang="fr">
+
+    <!--
+        MAIN LOGO
+        Appears on the far left, above the navigation bar.
+        Does NOT overlap the "Beaudet Services Conseils" text.
+    -->
+    <img class="logo" src="assets/beaudet_sc_pro.png" alt="Beaudet Services Conseils" />
+
+    <!--
+        MAIN NAVIGATION BAR
+        Contains:
+        - brand name (FR/EN)
+        - links with FR/EN labels
+        - a button to toggle language
+    -->
+    <nav class="container-fluid">
+        <ul>
+            <li>
+                <strong>
+                    <!-- Brand name in French -->
+                    <span class="lang-fr">Beaudet Services Conseils</span>
+                    <!-- Brand name in English -->
+                    <span class="lang-en">Beaudet Consulting Services</span>
+                </strong>
+            </li>
+        </ul>
+        <ul>
+            <li>
+                <a href="beaudet_SC.html">
+                    <span class="lang-fr">Accueil</span>
+                    <span class="lang-en">Home</span>
+                </a>
+            </li>
+            <li>
+                <a href="#about">
+                    <span class="lang-fr">À propos</span>
+                    <span class="lang-en">About</span>
+                </a>
+            </li>
+            <li>
+                <a href="#services">
+                    <span class="lang-fr">Nos services</span>
+                    <span class="lang-en">Our Services</span>
+                </a>
+            </li>
+            <li>
+                <a href="#contact" role="button">
+                    <span class="lang-fr">Nous joindre</span>
+                    <span class="lang-en">Contact</span>
+                </a>
+            </li>
+            <li>
+                <!-- Language toggle button -->
+                <button type="button" id="langToggle">FR / EN</button>
+            </li>
+        </ul>
+    </nav>
+
+    <!--
+        MAIN CONTENT AREA
+        Uses Pico's .container and .grid to keep the same layout
+        as your original version.
+    -->
+    <main class="container">
+        <div class="grid">
+            <!-- ABOUT SECTION -->
+            <section id="about">
+                <hgroup>
+                    <h2>
+                        <span class="lang-fr">À propos</span>
+                        <span class="lang-en">About</span>
+                    </h2>
+                    <h3>
+                        <span class="lang-fr">Qui nous sommes</span>
+                        <span class="lang-en">Who we are</span>
+                    </h3>
+                </hgroup>
+
+                <p>
+                    <!-- French description -->
+                    <span class="lang-fr">
+                        Beaudet Services Conseils est un cabinet de conseil professionnel
+                        dédié à la mise en place de stratégies et de solutions adaptées
+                        aux besoins de chaque client, dans différents secteurs.
+                        Notre engagement envers la qualité, la rigueur et l’innovation
+                        est au cœur de notre démarche.
+                    </span>
+                    <!-- English description -->
+                    <span class="lang-en">
+                        Beaudet Services Conseils is a professional consulting firm
+                        dedicated to delivering tailored strategies and solutions
+                        for clients across multiple sectors. Our commitment to quality,
+                        rigor, and innovation is at the heart of everything we do.
+                    </span>
+                </p>
+
+                <figure>
+                    <!-- Smaller inline logo inside the card -->
+                    <img class="logo-inline" src="assets/beaudet_sc_pro.png" alt="Logo Beaudet Services Conseils" />
+                    <figcaption>
+                        <a href="#" target="_blank">
+                            <span class="lang-fr">Image de fond (exemple)</span>
+                            <span class="lang-en">Background image example</span>
+                        </a>
+                    </figcaption>
+                </figure>
+            </section>
+
+            <!-- SERVICES / MISSION / VISION SECTION -->
+            <section id="services">
+                <h3>
+                    <span class="lang-fr">Notre mission</span>
+                    <span class="lang-en">Our Mission</span>
+                </h3>
+                <p>
+                    <span class="lang-fr">
+                        Offrir à nos clients des analyses solides, des outils fiables
+                        et des stratégies durables qui soutiennent la croissance
+                        et l’excellence opérationnelle.
+                    </span>
+                    <span class="lang-en">
+                        Provide our clients with robust analysis, reliable tools,
+                        and sustainable strategies that support growth
+                        and operational excellence.
+                    </span>
+                </p>
+
+                <h3>
+                    <span class="lang-fr">Notre vision</span>
+                    <span class="lang-en">Our Vision</span>
+                </h3>
+                <p>
+                    <span class="lang-fr">
+                        Devenir une référence reconnue pour l’intégrité, l’innovation
+                        et l’impact concret de nos interventions.
+                    </span>
+                    <span class="lang-en">
+                        To become a recognized reference for integrity, innovation,
+                        and the tangible impact of our work.
+                    </span>
+                </p>
+            </section>
+        </div>
+    </main>
+
+    <!--
+        CONTACT / NEWSLETTER SECTION
+        Same structure as your original "Stay Connected" block,
+        translated and controlled with .lang-fr / .lang-en.
+    -->
+    <section aria-label="Subscribe example" id="contact">
+        <div class="container">
+            <article>
+                <hgroup>
+                    <h2>
+                        <span class="lang-fr">Restez en contact</span>
+                        <span class="lang-en">Stay Connected</span>
+                    </h2>
+                    <h3>
+                        <span class="lang-fr">Abonnez-vous à notre infolettre</span>
+                        <span class="lang-en">Subscribe to our newsletter</span>
+                    </h3>
+                </hgroup>
+
+                <form class="grid">
+                    <!-- First name input (FR / EN) -->
+                    <input type="text"
+                           class="lang-fr"
+                           placeholder="Prénom"
+                           aria-label="Prénom"
+                           required />
+                    <input type="text"
+                           class="lang-en"
+                           placeholder="First name"
+                           aria-label="First name"
+                           required />
+
+                    <!-- Email input (FR / EN) -->
+                    <input type="email"
+                           class="lang-fr"
+                           placeholder="Courriel"
+                           aria-label="Courriel"
+                           required />
+                    <input type="email"
+                           class="lang-en"
+                           placeholder="Email address"
+                           aria-label="Email address"
+                           required />
+
+                    <!-- Submit button (no real backend, so preventDefault) -->
+                    <button type="submit"
+                            onclick="event.preventDefault()"
+                            class="lang-fr">
+                        S'abonner
+                    </button>
+                    <button type="submit"
+                            onclick="event.preventDefault()"
+                            class="lang-en">
+                        Subscribe
+                    </button>
+                </form>
+            </article>
+        </div>
+    </section>
+
+    <!--
+        FOOTER SECTION
+        Simple links with FR / EN labels, controlled by data-lang.
+    -->
+    <footer class="container">
+        <small>
+            <a href="#">
+                <span class="lang-fr">Politique de confidentialité</span>
+                <span class="lang-en">Privacy Policy</span>
+            </a>
+            •
+            <a href="#">
+                <span class="lang-fr">Conditions d’utilisation</span>
+                <span class="lang-en">Terms of Service</span>
+            </a>
+        </small>
+    </footer>
+
+    <!--
+        LANGUAGE TOGGLE SCRIPT
+        Very small JS that:
+        - reads current language from body[data-lang]
+        - toggles between "fr" and "en"
+        - CSS above handles which texts are visible
+    -->
+    <script>
+        // Attach a click handler to the language toggle button
+        document.getElementById('langToggle').addEventListener('click', function () {
+            // Get a reference to the <body> element
+            const body = document.body;
+
+            // Read the current language from the data-lang attribute
+            const currentLang = body.getAttribute('data-lang') || 'fr';
+
+            // Decide the next language: switch fr -> en or en -> fr
+            const nextLang = currentLang === 'fr' ? 'en' : 'fr';
+
+            // Write the new language back to the attribute
+            body.setAttribute('data-lang', nextLang);
+
+            // No further JS is necessary: CSS rules handle visibility.
+        });
+    </script>
+</body>
+</html>

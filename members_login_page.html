@@ -336,7 +336,7 @@
             const ROWS_PER_SEC = 4;     // speed (3 slow … 12 fast)
             const DENSITY = 1.0;  // fraction of active columns (0..1)
             const TRAIL_STRENGTH = 0.01;  // destination-out fade per frame (0.04–0.10)
-            const HIGHLIGHT_PROB = 0.015; // bright glyph chance
+            const HIGHLIGHT_PROB = 0.15; // bright glyph chance
             const MAX_DT = 0.05;  // clamp seconds between frames
 
             const canvas = document.getElementById('rain');
@@ -406,6 +406,7 @@
                 if (dt > MAX_DT) dt = MAX_DT;
 
                 // 1) Fade the offscreen buffer gently (destination-out)
+
                 octx.globalCompositeOperation = 'destination-out';
                 octx.fillStyle = `rgba(0,0,0,${TRAIL_STRENGTH})`;
                 octx.fillRect(0, 0, W, H);

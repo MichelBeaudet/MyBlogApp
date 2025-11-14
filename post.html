@@ -1,25 +1,32 @@
 <!doctype html>
 <html lang="en">
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Michel — Blog</title>
-    <meta name="description" content="Michel, PhD — Nuclear Engineering & Philosophy of Science. Research notes, essays, and updates.">
+    <meta name="description" content="Michel, PhD — Nuclear Engi... & Philosophy of Science. Research notes, essays, and updates.">
     <!-- Basic Open Graph for nicer shares -->
     <meta property="og:title" content="Michel — Nuclear Engineering | Philosophy of Science">
     <meta property="og:description" content="Research, essays, and notes by Michel (PhD).">
     <meta property="og:type" content="website">
     <meta property="og:image" content="assets/og-cover.png">
+
     <link rel="stylesheet" href="styles.css">
+
+    <!-- ✅ This line is missing today -->
+    <script defer src="js/blog_render_posts.js"></script>
+
     <script src="js/sendLog.js"></script>
 </head>
+
 <body>
     <script>sendLog('[' + pageName + '] Now starting <body>');</script>
 
     <header class="site-header">
         <nav class="container nav">
             <a class="brand" href="index.html" aria-label="Michel home">
-                <img src="assets/logo.svg" alt="" width="28" height="28" aria-hidden="true">
+                <img src="assets/logo_hacker.jpg" alt="" width="28" height="28" aria-hidden="true">
                 <span>Michel</span>
             </a>
             <button class="nav-toggle" aria-expanded="false" aria-controls="primary-nav">☰</button>

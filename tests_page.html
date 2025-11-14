@@ -11,7 +11,6 @@
     <h1>Tests Page</h1>
 
     <h1 id="clock"> MyClock</h1>
-    <label id="mylabel">label<br></label>
 
     <section id="tests_list">
         <h2>Tests to be done !</h2>
@@ -21,8 +20,6 @@
         </ul>
     </section>
 
-    <!-- Start scripts -->
-    <script src="./js/sendLog.js"></script>
     <!-- clock script -->
     <script>
         //clock
@@ -33,23 +30,6 @@
             clockElement.innerText = new Date().toLocaleTimeString();
         }, 1); // rafraîchit chaque seconde
 
-        //flashing label and logging every 2 seconds
-        const labelElement = document.getElementById('mylabel');
-        labelElement.style.color = 'blue';
-        labelElement.style.fontSize = '20px';
-        labelElement.style.fontFamily = 'Arial';
-
-        let i = 0;
-
-        const interval = setInterval(() => {
-            labelElement.innerHTML = `My Label ${i}`;
-            labelElement.style.color = i % 2 === 0 ? "red" : "blue";
-            //console.log(`My Label ${i}`);
-            //sendLog(`My Label ${i}`);
-            i++;
-
-            if (i > 100) clearInterval(interval);
-        }, 2000);
     </script>
 </body>
 </html>

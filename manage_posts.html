@@ -335,168 +335,169 @@
   </div>
 
   <script>
-    // === ÉTAT GLOBAL ===
-    let posts = [];
-    let selectedIndex = -1;
+      // === ÉTAT GLOBAL ===
+      let posts = [];
+      let selectedIndex = -1;
 
-    // === RÉFÉRENCES DOM ===
-    const el = {
-      fileInput:   document.getElementById('fileInput'),
-      btnImport:   document.getElementById('btnImport'),
-      btnExport:   document.getElementById('btnExport'),
-      btnNew:      document.getElementById('btnNew'),
-      btnDuplicate:document.getElementById('btnDuplicate'),
-      btnDelete:   document.getElementById('btnDelete'),
-      list:        document.getElementById('list'),
-      searchInput: document.getElementById('searchInput'),
-      form:        document.getElementById('form'),
-      fld_id:      document.getElementById('fld_id'),
-      fld_date:    document.getElementById('fld_date'),
-      fld_title:   document.getElementById('fld_title'),
-      fld_category:document.getElementById('fld_category'),
-      fld_reading: document.getElementById('fld_reading'),
-      fld_cover:   document.getElementById('fld_cover'),
-      fld_excerpt: document.getElementById('fld_excerpt'),
-      fld_html:    document.getElementById('fld_html'),
-      fld_featured:document.getElementById('fld_featured'),
-      btnSave:     document.getElementById('btnSave'),
-      msg:         document.getElementById('msg'),
-      preview:     document.getElementById('preview')
-    };
-
-    // === OUTILS ===
-    const fmt = new Intl.DateTimeFormat('fr-CA', { day:'numeric', month:'long', year:'numeric' });
-    function setMessage(text, cls='muted'){ el.msg.className = cls; el.msg.textContent = text || ''; }
-    function parseJSONSafe(text){ try { return JSON.parse(text); } catch(e){ return null; } }
-    function validateDateYYYYMMDD(s){ return /^\\d{4}-\\d{2}-\\d{2}$/.test(String(s).trim()); }
-    function nextId(){ const ids = posts.map(p => Number(p.id)).filter(n => Number.isFinite(n)); return (ids.length ? Math.max(...ids) + 1 : 1); }
-    function ensureUniqueId(id, ignoreIndex=-1){
-      id = String(id).trim();
-      if(id==='') return false;
-      return posts.findIndex((p,i) => String(p.id)===id && i!==ignoreIndex) === -1;
-    }
-    function enforceSingleFeatured(setIndex){ posts.forEach((p,i) => { p.featured = (i===setIndex); }); }
-
-    // === RENDU LISTE ===
-    function renderList(){
-      const q = el.searchInput.value.trim().toLowerCase();
-      el.list.innerHTML = '';
-      posts.forEach((p, index) => {
-        const hay = (p.title || '') + ' ' + (p.category || '');
-        if(q && hay.toLowerCase().indexOf(q) === -1) return;
-        const row = document.createElement('div');
-        row.className = 'row'; row.setAttribute('role', 'listitem'); row.setAttribute('draggable', 'true');
-        if(index === selectedIndex) row.style.outline = '2px solid var(--accent)';
-        row.addEventListener('dragstart', ev => { row.classList.add('dragging'); ev.dataTransfer.setData('text/plain', String(index)); });
-        row.addEventListener('dragend', () => row.classList.remove('dragging'));
-        row.addEventListener('dragover', ev => { ev.preventDefault(); });
-        row.addEventListener('drop', ev => {
-          ev.preventDefault();
-          const from = Number(ev.dataTransfer.getData('text/plain')); const to = index;
-          if(Number.isFinite(from) && Number.isFinite(to) && from !== to){
-            const item = posts.splice(from,1)[0]; posts.splice(to,0,item);
-            if(selectedIndex === from) selectedIndex = to;
-            else if(from < selectedIndex && to >= selectedIndex) selectedIndex--;
-            else if(from > selectedIndex && to <= selectedIndex) selectedIndex++;
-            renderList(); setMessage('Ordre mis à jour — pensez à Exporter.', 'info'); updateButtonsState();
-          }
-        });
-        const c_id = document.createElement('div'); c_id.className='cell id'; c_id.textContent = String(p.id ?? '');
-        const c_title = document.createElement('div'); c_title.className='cell'; c_title.textContent = p.title ?? '';
-        const c_cat = document.createElement('div'); c_cat.className='cell'; c_cat.textContent = p.category ?? '';
-        const c_date = document.createElement('div'); c_date.className='cell'; c_date.textContent = p.date ?? '';
-        const c_feat = document.createElement('div'); c_feat.className='cell feat';
-        const c_actions = document.createElement('div'); c_actions.className='cell actions';
-        if(p.featured){ const b = document.createElement('span'); b.className='badge featured'; b.textContent='À la une'; c_feat.appendChild(b); } else { c_feat.textContent = '-'; }
-        const bEdit = document.createElement('button'); bEdit.className='btn'; bEdit.textContent='Éditer'; bEdit.addEventListener('click', () => { selectIndex(index); });
-        c_actions.appendChild(bEdit);
-        row.appendChild(c_id); row.appendChild(c_title); row.appendChild(c_cat); row.appendChild(c_date); row.appendChild(c_feat); row.appendChild(c_actions);
-        el.list.appendChild(row);
-      });
-    }
-
-    // === SÉLECTION + FORMULAIRE ===
-    function selectIndex(i){
-      if(i<0 || i>=posts.length){ selectedIndex=-1; clearForm(); return; }
-      selectedIndex = i; const p = posts[i];
-      el.fld_id.value = String(p.id ?? ''); el.fld_date.value = String(p.date ?? ''); el.fld_title.value = String(p.title ?? '');
-      el.fld_category.value = String(p.category ?? ''); el.fld_reading.value = String(p.readingTime ?? '');
-      el.fld_cover.value = String(p.cover ?? ''); el.fld_excerpt.value = String(p.excerpt ?? ''); el.fld_html.value = String(p.html ?? '');
-      el.fld_featured.checked = !!p.featured; updatePreview();
-      renderList(); updateButtonsState(); setMessage('Billet chargé pour édition.');
-    }
-    function clearForm(){ el.form.reset(); updatePreview(''); updateButtonsState(); }
-    function readForm(){
-      return {
-        id: String(el.fld_id.value).trim(), date: String(el.fld_date.value).trim(), title: String(el.fld_title.value).trim(),
-        category: String(el.fld_category.value).trim(), readingTime: String(el.fld_reading.value).trim(),
-        cover: String(el.fld_cover.value).trim(), excerpt: String(el.fld_excerpt.value).trim(),
-        html: String(el.fld_html.value).trim(), featured: !!el.fld_featured.checked
+      // === RÉFÉRENCES DOM ===
+      const el = {
+          fileInput: document.getElementById('fileInput'),
+          btnImport: document.getElementById('btnImport'),
+          btnExport: document.getElementById('btnExport'),
+          btnNew: document.getElementById('btnNew'),
+          btnDuplicate: document.getElementById('btnDuplicate'),
+          btnDelete: document.getElementById('btnDelete'),
+          list: document.getElementById('list'),
+          searchInput: document.getElementById('searchInput'),
+          form: document.getElementById('form'),
+          fld_id: document.getElementById('fld_id'),
+          fld_date: document.getElementById('fld_date'),
+          fld_title: document.getElementById('fld_title'),
+          fld_category: document.getElementById('fld_category'),
+          fld_reading: document.getElementById('fld_reading'),
+          fld_cover: document.getElementById('fld_cover'),
+          fld_excerpt: document.getElementById('fld_excerpt'),
+          fld_html: document.getElementById('fld_html'),
+          fld_featured: document.getElementById('fld_featured'),
+          btnSave: document.getElementById('btnSave'),
+          msg: document.getElementById('msg'),
+          preview: document.getElementById('preview')
       };
-    }
-    function validateForm(model, ignoreIndex=-1){
-      if(model.id==='') return 'ID requis.';
-      if(!/^\d+$/.test(model.id)) return 'ID doit être un entier positif.';
-      if(!ensureUniqueId(model.id, ignoreIndex)) return 'ID déjà utilisé.';
-      //if(!validateDateYYYYMMDD(model.date)) return 'Date invalide (format attendu: YYYY-MM-DD).';
-      if(!model.title) return 'Titre requis.'; if(!model.excerpt) return 'Extrait requis.'; if(!model.html) return 'Contenu HTML requis.';
-      return '';
-    }
-    function updatePreview(html){
-      const doc = `<!doctype html><html lang="fr-CA"><head><meta charset="utf-8"><style> body{font:16px/1.6 Georgia,serif; padding:1rem; color:#111} img{max-width:100%;} </style></head><body>${html ?? el.fld_html.value}</body></html>`;
-      const blob = new Blob([doc], {type:'text/html'}); const url = URL.createObjectURL(blob);
-      el.preview.src = url; el.preview.onload = () => setTimeout(() => URL.revokeObjectURL(url), 0);
-    }
-    function updateButtonsState(){
-      const hasData = posts.length > 0; const hasSel = selectedIndex >= 0 && selectedIndex < posts.length;
-      el.btnExport.disabled = !hasData; el.btnDuplicate.disabled = !hasSel; el.btnDelete.disabled = !hasSel; el.btnSave.disabled = !hasSel;
-    }
 
-    // === IMPORT / EXPORT ===
-    document.getElementById('btnImport').addEventListener('click', () => el.fileInput.click());
-    el.fileInput.addEventListener('change', async () => {
-      const file = el.fileInput.files?.[0]; if(!file) return;
-      const text = await file.text(); const arr = parseJSONSafe(text);
-      if(!Array.isArray(arr)){ setMessage('Fichier JSON invalide: tableau attendu.', 'warning'); return; }
-      posts = arr; selectedIndex = -1; renderList(); clearForm(); updateButtonsState();
-      setMessage(`Import réussi (${posts.length} billet(s)).`,'info'); el.fileInput.value='';
-    });
-    el.btnExport.addEventListener('click', () => {
-      if(!posts.length){ setMessage('Aucun billet à exporter.', 'warning'); return; }
-      const json = JSON.stringify(posts, null, 2); const blob = new Blob([json], {type:'application/json'});
-      const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'posts.json'; document.body.appendChild(a); a.click(); a.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 0); setMessage('Export terminé: posts.json téléchargé.', 'info');
-    });
+      // === OUTILS ===
+      const fmt = new Intl.DateTimeFormat('fr-CA', { day: 'numeric', month: 'long', year: 'numeric' });
+      function setMessage(text, cls = 'muted') { el.msg.className = cls; el.msg.textContent = text || ''; }
+      function parseJSONSafe(text) { try { return JSON.parse(text); } catch (e) { return null; } }
+      function validateDateYYYYMMDD(s) { return /^\\d{4}-\\d{2}-\\d{2}$/.test(String(s).trim()); }
+      function nextId() { const ids = posts.map(p => Number(p.id)).filter(n => Number.isFinite(n)); return (ids.length ? Math.max(...ids) + 1 : 1); }
+      function ensureUniqueId(id, ignoreIndex = -1) {
+          id = String(id).trim();
+          if (id === '') return false;
+          return posts.findIndex((p, i) => String(p.id) === id && i !== ignoreIndex) === -1;
+      }
+      function enforceSingleFeatured(setIndex) { posts.forEach((p, i) => { p.featured = (i === setIndex); }); }
 
-    // === CRÉER / DUPLIQUER / SUPPRIMER ===
-    el.btnNew.addEventListener('click', () => {
-      const id = nextId(); const now = new Date(); const yyyy = now.getFullYear(); const mm = String(now.getMonth()+1).padStart(2,'0'); const dd = String(now.getDate()).padStart(2,'0');
-      const model = { id:String(id), date:`${yyyy}-${mm}-${dd}`, title:'Nouveau billet', excerpt:'Résumé du billet…', readingTime:'', category:'', cover:'', featured:false, html:'<p>Contenu en HTML…</p>' };
-      posts.push(model); selectedIndex = posts.length - 1; renderList(); selectIndex(selectedIndex); setMessage('Nouveau billet créé (non enregistré).','info'); updateButtonsState();
-    });
-    el.btnDuplicate.addEventListener('click', () => {
-      if(selectedIndex<0) return; const src = posts[selectedIndex]; const copy = {...src}; copy.id = String(nextId()); copy.title = (src.title || 'Billet') + ' (copie)'; copy.featured = false;
-      posts.splice(selectedIndex+1, 0, copy); selectedIndex = selectedIndex + 1; renderList(); selectIndex(selectedIndex); setMessage('Billet dupliqué (non enregistré).','info'); updateButtonsState();
-    });
-    el.btnDelete.addEventListener('click', () => {
-      if(selectedIndex<0) return; const p = posts[selectedIndex]; const ok = confirm(`Supprimer le billet ID ${p.id} — « ${p.title} » ?`); if(!ok) return;
-      posts.splice(selectedIndex,1); selectedIndex = -1; renderList(); clearForm(); setMessage('Billet supprimé. Pensez à Exporter.','warning'); updateButtonsState();
-    });
+      // === RENDU LISTE ===
+      function renderList() {
+          const q = el.searchInput.value.trim().toLowerCase();
+          el.list.innerHTML = '';
+          posts.forEach((p, index) => {
+              const hay = (p.title || '') + ' ' + (p.category || '');
+              if (q && hay.toLowerCase().indexOf(q) === -1) return;
+              const row = document.createElement('div');
+              row.className = 'row'; row.setAttribute('role', 'listitem'); row.setAttribute('draggable', 'true');
+              if (index === selectedIndex) row.style.outline = '2px solid var(--accent)';
+              row.addEventListener('dragstart', ev => { row.classList.add('dragging'); ev.dataTransfer.setData('text/plain', String(index)); });
+              row.addEventListener('dragend', () => row.classList.remove('dragging'));
+              row.addEventListener('dragover', ev => { ev.preventDefault(); });
+              row.addEventListener('drop', ev => {
+                  ev.preventDefault();
+                  const from = Number(ev.dataTransfer.getData('text/plain')); const to = index;
+                  if (Number.isFinite(from) && Number.isFinite(to) && from !== to) {
+                      const item = posts.splice(from, 1)[0]; posts.splice(to, 0, item);
+                      if (selectedIndex === from) selectedIndex = to;
+                      else if (from < selectedIndex && to >= selectedIndex) selectedIndex--;
+                      else if (from > selectedIndex && to <= selectedIndex) selectedIndex++;
+                      renderList(); setMessage('Ordre mis à jour — pensez à Exporter.', 'info'); updateButtonsState();
+                  }
+              });
+              const c_id = document.createElement('div'); c_id.className = 'cell id'; c_id.textContent = String(p.id ?? '');
+              const c_title = document.createElement('div'); c_title.className = 'cell'; c_title.textContent = p.title ?? '';
+              const c_cat = document.createElement('div'); c_cat.className = 'cell'; c_cat.textContent = p.category ?? '';
+              const c_date = document.createElement('div'); c_date.className = 'cell'; c_date.textContent = p.date ?? '';
+              const c_feat = document.createElement('div'); c_feat.className = 'cell feat';
+              const c_actions = document.createElement('div'); c_actions.className = 'cell actions';
+              if (p.featured) { const b = document.createElement('span'); b.className = 'badge featured'; b.textContent = 'À la une'; c_feat.appendChild(b); } else { c_feat.textContent = '-'; }
+              const bEdit = document.createElement('button'); bEdit.className = 'btn'; bEdit.textContent = 'Éditer'; bEdit.addEventListener('click', () => { selectIndex(index); });
+              c_actions.appendChild(bEdit);
+              row.appendChild(c_id); row.appendChild(c_title); row.appendChild(c_cat); row.appendChild(c_date); row.appendChild(c_feat); row.appendChild(c_actions);
+              el.list.appendChild(row);
+          });
+      }
 
-    // === ENREGISTRER (FORM) ===
-    el.btnSave.addEventListener('click', () => {
-      if(selectedIndex<0){ setMessage('Aucun billet sélectionné.', 'warning'); return; }
-      const model = readForm(); const err = validateForm(model, selectedIndex); if(err){ setMessage(err, 'warning'); return; }
-      model.id = String(model.id).trim(); model.featured = !!model.featured;
-      if(model.featured){ enforceSingleFeatured(selectedIndex); }
-      posts[selectedIndex] = { ...posts[selectedIndex], ...model };
-      renderList(); setMessage('Modifications enregistrées (en mémoire). Exportez pour sauvegarder sur disque.', 'info'); updateButtonsState();
-    });
+      // === SÉLECTION + FORMULAIRE ===
+      function selectIndex(i) {
+          if (i < 0 || i >= posts.length) { selectedIndex = -1; clearForm(); return; }
+          selectedIndex = i; const p = posts[i];
+          el.fld_id.value = String(p.id ?? ''); el.fld_date.value = String(p.date ?? ''); el.fld_title.value = String(p.title ?? '');
+          el.fld_category.value = String(p.category ?? ''); el.fld_reading.value = String(p.readingTime ?? '');
+          el.fld_cover.value = String(p.cover ?? ''); el.fld_excerpt.value = String(p.excerpt ?? ''); el.fld_html.value = String(p.html ?? '');
+          el.fld_featured.checked = !!p.featured; updatePreview();
+          renderList(); updateButtonsState(); setMessage('Billet chargé pour édition.');
+      }
+      function clearForm() { el.form.reset(); updatePreview(''); updateButtonsState(); }
+      function readForm() {
+          return {
+              id: String(el.fld_id.value).trim(), date: String(el.fld_date.value).trim(), title: String(el.fld_title.value).trim(),
+              category: String(el.fld_category.value).trim(), readingTime: String(el.fld_reading.value).trim(),
+              cover: String(el.fld_cover.value).trim(), excerpt: String(el.fld_excerpt.value).trim(),
+              html: String(el.fld_html.value).trim(), featured: !!el.fld_featured.checked
+          };
+      }
+      function validateForm(model, ignoreIndex = -1) {
+          if (model.id === '') return 'ID requis.';
+          if (!/^\d+$/.test(model.id)) return 'ID doit être un entier positif.';
+          if (!ensureUniqueId(model.id, ignoreIndex)) return 'ID déjà utilisé.';
+          //if(!validateDateYYYYMMDD(model.date)) return 'Date invalide (format attendu: YYYY-MM-DD).';
+          if (!model.title) return 'Titre requis.'; if (!model.excerpt) return 'Extrait requis.'; if (!model.html) return 'Contenu HTML requis.';
+          return '';
+      }
+      function updatePreview(html) {
+          const doc = `<!doctype html><html lang="fr-CA"><head><meta charset="utf-8"><style> body{font:16px/1.6 Georgia,serif; padding:1rem; color:#111} img{max-width:100%;} </style></head><body>${html ?? el.fld_html.value}</body></html>`;
+          const blob = new Blob([doc], { type: 'text/html' }); const url = URL.createObjectURL(blob);
+          el.preview.src = url; el.preview.onload = () => setTimeout(() => URL.revokeObjectURL(url), 0);
+      }
+      function updateButtonsState() {
+          const hasData = posts.length > 0; const hasSel = selectedIndex >= 0 && selectedIndex < posts.length;
+          el.btnExport.disabled = !hasData; el.btnDuplicate.disabled = !hasSel; el.btnDelete.disabled = !hasSel; el.btnSave.disabled = !hasSel;
+      }
 
-    // Aperçu live & états
-    el.fld_html.addEventListener('input', () => updatePreview());
-    el.form.addEventListener('input', () => { if(selectedIndex>=0){ el.btnSave.disabled = false; }});
-    el.searchInput.addEventListener('input', renderList);
+      // === IMPORT / EXPORT ===
+      document.getElementById('btnImport').addEventListener('click', () => el.fileInput.click());
+      el.fileInput.addEventListener('change', async () => {
+          const file = el.fileInput.files?.[0]; if (!file) return;
+          const text = await file.text(); const arr = parseJSONSafe(text);
+          if (!Array.isArray(arr)) { setMessage('Fichier JSON invalide: tableau attendu.', 'warning'); return; }
+          posts = arr; selectedIndex = -1; renderList(); clearForm(); updateButtonsState();
+          setMessage(`Import réussi (${posts.length} billet(s)).`, 'info'); el.fileInput.value = '';
+      });
+      el.btnExport.addEventListener('click', () => {
+          if (!posts.length) { setMessage('Aucun billet à exporter.', 'warning'); return; }
+          const json = JSON.stringify(posts, null, 2); const blob = new Blob([json], { type: 'application/json' });
+          const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'posts.json'; document.body.appendChild(a); a.click(); a.remove();
+          sendLog('[' + pageName + '] Exported posts.json to  ' + url);
+          setTimeout(() => URL.revokeObjectURL(url), 0); setMessage('Export terminé: posts.json téléchargé.', 'info');
+      });
+
+      // === CRÉER / DUPLIQUER / SUPPRIMER ===
+      el.btnNew.addEventListener('click', () => {
+          const id = nextId(); const now = new Date(); const yyyy = now.getFullYear(); const mm = String(now.getMonth() + 1).padStart(2, '0'); const dd = String(now.getDate()).padStart(2, '0');
+          const model = { id: String(id), date: `${yyyy}-${mm}-${dd}`, title: 'Nouveau billet', excerpt: 'Résumé du billet…', readingTime: '', category: '', cover: '', featured: false, html: '<p>Contenu en HTML…</p>' };
+          posts.push(model); selectedIndex = posts.length - 1; renderList(); selectIndex(selectedIndex); setMessage('Nouveau billet créé (non enregistré).', 'info'); updateButtonsState();
+      });
+      el.btnDuplicate.addEventListener('click', () => {
+          if (selectedIndex < 0) return; const src = posts[selectedIndex]; const copy = { ...src }; copy.id = String(nextId()); copy.title = (src.title || 'Billet') + ' (copie)'; copy.featured = false;
+          posts.splice(selectedIndex + 1, 0, copy); selectedIndex = selectedIndex + 1; renderList(); selectIndex(selectedIndex); setMessage('Billet dupliqué (non enregistré).', 'info'); updateButtonsState();
+      });
+      el.btnDelete.addEventListener('click', () => {
+          if (selectedIndex < 0) return; const p = posts[selectedIndex]; const ok = confirm(`Supprimer le billet ID ${p.id} — « ${p.title} » ?`); if (!ok) return;
+          posts.splice(selectedIndex, 1); selectedIndex = -1; renderList(); clearForm(); setMessage('Billet supprimé. Pensez à Exporter.', 'warning'); updateButtonsState();
+      });
+
+      // === ENREGISTRER (FORM) ===
+      el.btnSave.addEventListener('click', () => {
+          if (selectedIndex < 0) { setMessage('Aucun billet sélectionné.', 'warning'); return; }
+          const model = readForm(); const err = validateForm(model, selectedIndex); if (err) { setMessage(err, 'warning'); return; }
+          model.id = String(model.id).trim(); model.featured = !!model.featured;
+          if (model.featured) { enforceSingleFeatured(selectedIndex); }
+          posts[selectedIndex] = { ...posts[selectedIndex], ...model };
+          renderList(); setMessage('Modifications enregistrées (en mémoire). Exportez pour sauvegarder sur disque.', 'info'); updateButtonsState();
+      });
+
+      // Aperçu live & états
+      el.fld_html.addEventListener('input', () => updatePreview());
+      el.form.addEventListener('input', () => { if (selectedIndex >= 0) { el.btnSave.disabled = false; } });
+      el.searchInput.addEventListener('input', renderList);
   </script>
 </body>
 </html>

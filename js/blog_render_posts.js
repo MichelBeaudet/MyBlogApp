@@ -46,7 +46,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Load posts.json (works when served over HTTP; file:// disallows fetch in some browsers)
 async function loadPosts(){
-    const res = await fetch('posts.json', {cache:'no-store'});
+    const res = await fetch('assets/posts.json', {cache:'no-store'});
     if (!res.ok) { throw new Error('Failed to load posts.json'); }
   const posts = await res.json();
   // Sort newest first by date (ISO YYYY-MM-DD)

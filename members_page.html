@@ -14,16 +14,17 @@
         <main>
             <h1>Member's Page</h1>
             <h2>Welcome, <span id="usernameDisplay"></span>!</h2>
+            
+            <br />
+            <h1 id="clock"> MyClock</h1>
 
             <h2><a href="index.html">Home</a></h2>
             <h2><a href="syslib_page.html">syslib_page</a></h2>
             <!-- My todo section  -->
+
             <section id="todo">
-                <h2>Tests to be done !</h2>
+                <h1 id="mylabel"> Tests to be done !</h1>
                 <ul>
-                    <li>Web GET &lt;--- Server POST</li>
-                    <li>Web POST ---&gt; Server GET</li>
-                    <li>Adapt for ipad</li>
                     <li>history.back()</li>
                     <li>history.forward()</li>
                     <li>history.go()</li>
@@ -49,6 +50,35 @@
         </script>
 
     </div>
+
+    <script>
+        //clock
+        const clockElement = document.getElementById('clock');
+        //window.setInterval(clockElement.innerText = new Date().toLocaleTimeString(),1);
+
+        window.setInterval(() => {
+            clockElement.innerText = new Date().toLocaleTimeString();
+        }, 1); // rafraîchit chaque seconde
+
+        //flashing label and logging every 2 seconds
+        const labelElement = document.getElementById('mylabel');
+        labelElement.style.color = 'blue';
+        //labelElement.style.fontSize = '20px';
+        labelElement.style.fontFamily = 'Arial';
+
+        let i = 0;
+
+        const interval = setInterval(() => {
+            labelElement.innerHTML = `Tests to be done ! ${i}`;
+            labelElement.style.color = i % 2 === 0 ? "red" : "blue";
+            //console.log(`My Label ${i}`);
+            //sendLog(`My Label ${i}`);
+            i++;
+
+            if (i > 100) clearInterval(interval);
+        }, 2000);
+    </script>
+
 
 
     <h2>Send an Email</h2>

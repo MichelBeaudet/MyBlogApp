@@ -270,7 +270,7 @@ server.get('/clear_sys_props_log', (_req, res) => {
 // Import the new syslib_ports module (must exist at ./js/syslib_ports.js)
 let syslibPorts;
 try {
-    syslibPorts = require('./syslib_ports');
+    syslibPorts = require('./js/syslib_ports.js');
     log.ok('syslib_ports module loaded');
 } catch (e) {
     log.error('Failed to load ./js/syslib_ports.js: ' + String(e));

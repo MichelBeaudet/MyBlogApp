@@ -604,7 +604,6 @@ server.get('/video_stream', async (req, res) => {
     }
 });
 
-
 // /teapot (418)
 server.get('/teapot', (req, res) => {
     log.section('/teapot');

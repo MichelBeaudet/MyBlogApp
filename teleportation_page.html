@@ -5,6 +5,116 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Les Téléportistes | The Teleportists</title>
     <link rel="stylesheet" href="teleportation_page.css">
+
+    <!-- Extra styles for funny popup + Star Trek beam-out glow -->
+    <style>
+        /* Center popup for the funny text */
+        .funny-float {
+            position: fixed;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(10, 10, 30, 0.95);
+            color: #f5f5ff;
+            padding: 18px 24px;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            z-index: 9999;
+            animation: pop-in 0.25s ease-out;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+            text-align: center;
+            max-width: 320px;
+        }
+
+        @keyframes pop-in {
+            from {
+                transform: scale(0.5) translate(-50%, -50%);
+                opacity: 0;
+            }
+
+            to {
+                transform: scale(1) translate(-50%, -50%);
+                opacity: 1;
+            }
+        }
+
+        /* Overall beam overlay */
+        .beam-overlay {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 9990;
+            background: radial-gradient(circle at center, rgba(180, 255, 255, 0.25), transparent 60%);
+            animation: beamFlash 11.2s ease-out forwards;
+            mix-blend-mode: screen;
+        }
+
+        @keyframes beamFlash {
+            0% {
+                opacity: 0;
+            }
+
+            10% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+
+            100% {
+                opacity: 0;
+            }
+        }
+
+        /* Vertical “transporter column” */
+        .beam-column {
+            position: absolute;
+            top: -10%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 120px;
+            height: 120%;
+            background: repeating-linear-gradient( to bottom, rgba(200, 255, 255, 0.95), rgba(200, 255, 255, 0.95) 2px, rgba(200, 255, 255, 0.1) 6px );
+            box-shadow: 0 0 40px rgba(150, 255, 255, 0.9);
+            border-radius: 999px;
+            opacity: 0.0;
+            animation: beamColumn 9.6s ease-out forwards;
+        }
+
+        @keyframes beamColumn {
+            0% {
+                opacity: 0;
+                filter: blur(4px);
+            }
+
+            10% {
+                opacity: 1;
+                filter: blur(1px);
+            }
+
+            60% {
+                opacity: 0.7;
+                filter: blur(2px);
+            }
+
+            100% {
+                opacity: 0;
+                filter: blur(5px);
+            }
+        }
+
+        /* Subtle glow / warp on the reservation area while “beaming” */
+        .beaming #reservation {
+            filter: brightness(1.3) saturate(1.2) blur(0.5px);
+            transform: scale(1.02);
+            transition: filter 0.25s ease-out, transform 0.25s ease-out;
+        }
+
+        .beaming #reservation-form {
+            box-shadow: 0 0 18px rgba(150, 255, 255, 0.8);
+        }
+    </style>
 </head>
 <body>
 
@@ -74,10 +184,13 @@
         <h2>Space-Time Travel Reservation</h2>
         <form id="reservation-form">
             <label>Full Name:</label>
-            <input type="text" name="name" required>
+            <!-- 
+                <input type="text" name="name" required>
+        -->
+            <input type="text" name="name"  required>
 
             <label>Destination / Time Period:</label>
-            <input type="text" name="destination" required>
+            <input type="text" name="destination"  required>
 
             <label>Purpose:</label>
             <textarea name="purpose" rows="4"></textarea>
@@ -113,22 +226,58 @@
         <p>© 2089–2099 Les Téléportistes | The Teleportists — All Rights Reserved</p>
     </footer>
 
-    <!-- Reservation Script -->
+    <!-- Reservation Script with funny popup + Star Trek beam-out glow -->
     <script>
         document.getElementById("reservation-form").addEventListener("submit", async (e) => {
             e.preventDefault();
+
+            // 1) Funny floating message
+            const msg = document.createElement("div");
+            msg.className = "funny-float";
+            msg.innerHTML = "🖖 Initiating transporter sequence...<br>Keep arms and legs inside your timeline.";
+            document.body.appendChild(msg);
+            setTimeout(() => msg.remove(), 6000);
+
+            // 2) Star Trek–style beam overlay
+            document.body.classList.add("beaming");
+
+            const overlay = document.createElement("div");
+            overlay.className = "beam-overlay";
+
+            const column = document.createElement("div");
+            column.className = "beam-column";
+            overlay.appendChild(column);
+
+            document.body.appendChild(overlay);
+
+            // Remove beam effect after animation
+            setTimeout(() => {
+                overlay.remove();
+                document.body.classList.remove("beaming");
+            }, 4000);
+
+            // 3) Normal reservation logic
             const formData = {
                 name: e.target.name.value,
                 destination: e.target.destination.value,
                 purpose: e.target.purpose.value
             };
-            const res = await fetch("/api/reserve", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(formData)
-            });
-            const data = await res.json();
-            alert(data.message || "Reservation received!");
+
+            try {
+                const res = await fetch("/teleportation_reservation", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(formData)
+                });
+
+                const data = await res.json();
+                //alert(data.message || "Reservation received! Your atoms thank you.");
+                //alert("Reservation received! Your atoms thank you.");
+            } catch (err) {
+                console.error(err);
+                alert("Transporter buffer error. Please try again.");
+            }
+
             e.target.reset();
         });
     </script>

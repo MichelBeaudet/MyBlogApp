@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Terminal Hacker - Téléchargement fictif</title>
+
+    <style>
+        /* 
+         * --- RESET TRÈS SIMPLE ---
+         * On enlève les marges par défaut pour partir d'une base propre.
+         */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        /*
+         * --- STYLE GLOBAL DE LA PAGE ---
+         * Fond noir, texte vert, police monospace pour l'effet "terminal".
+         */
+        body {
+            background-color: #000000;        /* fond noir */
+            color: #00ff66;                   /* vert "terminal" */
+            font-family: "Courier New", monospace;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        /*
+         * Conteneur principal centré
+         */
+        .wrapper {
+            width: 100%;
+            max-width: 900px;
+        }
+
+        /*
+         * Titre principal style hacker
+         */
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            letter-spacing: 2px;
+            font-size: 1.6rem;
+        }
+
+        /*
+         * Sous-titre / légende
+         */
+        .subtitle {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+            color: #00aa44;
+        }
+
+        /*
+         * Bloc "terminal" avec bord vert et légère lueur
+         */
+        .terminal {
+            background-color: #020202;
+            border: 2px solid #00ff66;
+            box-shadow: 0 0 20px rgba(0, 255, 102, 0.25);
+            padding: 15px;
+            border-radius: 4px;
+        }
+
+        /*
+         * Barre de titre façon fenêtre de terminal
+         */
+        .terminal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            color: #00dd55;
+            font-size: 0.85rem;
+        }
+
+        .terminal-dots {
+            display: flex;
+            gap: 6px;
+        }
+
+        .terminal-dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            border: 1px solid #00ff66;
+        }
+
+        /*
+         * Zone de log défilante
+         */
+        .terminal-body {
+            background-color: #000000;
+            border: 1px solid #004422;
+            padding: 10px;
+            height: 260px;          /* hauteur fixe avec scroll */
+            overflow-y: auto;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        /*
+         * Ligne de log (texte du terminal)
+         */
+        .log-line {
+            white-space: pre-wrap;
+        }
+
+        /*
+         * Ligne de log "système" un peu plus pâle
+         */
+        .log-line.system {
+            color: #00aa55;
+        }
+
+        /*
+         * Bloc controls sous le terminal (bouton + progression)
+         */
+        .controls {
+            margin-top: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        /*
+         * Bouton principal de téléchargement
+         */
+        #downloadBtn {
+            align-self: flex-start;
+            background-color: #003311;
+            color: #00ff66;
+            border: 1px solid #00ff66;
+            padding: 10px 18px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: "Courier New", monospace;
+            font-size: 0.95rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            transition: background-color 0.15s, transform 0.05s, box-shadow 0.15s;
+        }
+
+        #downloadBtn:hover {
+            background-color: #005522;
+            box-shadow: 0 0 10px rgba(0, 255, 102, 0.4);
+        }
+
+        #downloadBtn:active {
+            transform: scale(0.97);
+            box-shadow: 0 0 5px rgba(0, 255, 102, 0.6);
+        }
+
+        #downloadBtn:disabled {
+            opacity: 0.6;
+            cursor: default;
+            box-shadow: none;
+        }
+
+        /*
+         * Conteneur de la barre de progression
+         */
+        .progress-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        /*
+         * "Étiquette" au-dessus de la barre de progression
+         */
+        .progress-label {
+            font-size: 0.85rem;
+            color: #00dd55;
+        }
+
+        /*
+         * Bord de la barre de progression
+         */
+        .progress-bar {
+            width: 100%;
+            height: 18px;
+            border-radius: 999px;
+            border: 1px solid #00ff66;
+            overflow: hidden;
+            background: linear-gradient(
+                to right,
+                rgba(0, 255, 102, 0.05),
+                rgba(0, 255, 102, 0.02)
+            );
+        }
+
+        /*
+         * Remplissage vert de la barre
+         */
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: repeating-linear-gradient(
+                -45deg,
+                #00ff66 0,
+                #00ff66 6px,
+                #00cc55 6px,
+                #00cc55 12px
+            );
+            transition: width 0.15s ease-out;
+        }
+
+        /*
+         * Texte de pourcentage
+         */
+        .progress-percent {
+            font-size: 0.9rem;
+        }
+
+        /*
+         * Légère animation "clignotement" pour le curseur >
+         */
+        @keyframes blink {
+            0%, 49% { opacity: 1; }
+            50%, 100% { opacity: 0; }
+        }
+
+        .cursor {
+            display: inline-block;
+            width: 8px;
+            animation: blink 1s step-end infinite;
+        }
+    </style>
+</head>
+<body>
+<div class="wrapper">
+    <!-- Titre style hacker -->
+    <h1>[ HACKER TERMINAL SIMULATOR ]</h1>
+    <p class="subtitle">Téléchargement fictif d’un fichier ultra confidentiel…</p>
+
+    <!-- Bloc terminal -->
+    <div class="terminal">
+        <!-- Barre supérieure du terminal -->
+        <div class="terminal-header">
+            <div class="terminal-dots">
+                <div class="terminal-dot"></div>
+                <div class="terminal-dot"></div>
+                <div class="terminal-dot"></div>
+            </div>
+            <span>root@darknode:/secure/downloads</span>
+        </div>
+
+        <!-- Zone de log défilante -->
+        <div id="terminalLog" class="terminal-body">
+            <!-- Quelques lignes initiales -->
+            <div class="log-line system">[BOOT] Initialisation du noyau… OK</div>
+            <div class="log-line system">[NET] Interface tun0… OK</div>
+            <div class="log-line system">[VPN] Connexion au relais chiffré… OK</div>
+            <div class="log-line system">[READY] Terminal prêt. En attente de commande.</div>
+            <div class="log-line">root@darknode:~$ <span class="cursor">▮</span></div>
+        </div>
+
+        <!-- Bouton + barre de progression -->
+        <div class="controls">
+            <!-- Bouton qui déclenche le "faux téléchargement" -->
+            <button id="downloadBtn" type="button">
+                Lancer le téléchargement
+            </button>
+
+            <!-- Zone de progression -->
+            <div class="progress-wrapper">
+                <div id="progressLabel" class="progress-label">
+                    Aucun téléchargement en cours.
+                </div>
+                <div class="progress-bar" aria-hidden="true">
+                    <div id="progressFill" class="progress-fill"></div>
+                </div>
+                <div id="progressPercent" class="progress-percent">
+                    0%
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    /*
+     * --- VARIABLES DE RÉFÉRENCE SUR LES ÉLÉMENTS DU DOM ---
+     * On récupère ici tout ce dont le script a besoin :
+     *  - le log du terminal
+     *  - le bouton de lancement
+     *  - la barre de progression + pourcentage
+     */
+    const terminalLog   = document.getElementById("terminalLog");
+    const downloadBtn   = document.getElementById("downloadBtn");
+    const progressFill  = document.getElementById("progressFill");
+    const progressPercent = document.getElementById("progressPercent");
+    const progressLabel = document.getElementById("progressLabel");
+
+    /*
+     * Variables d'état pour le téléchargement fictif.
+     */
+    let currentProgress = 0;    // pourcentage courant (0–100)
+    let isDownloading   = false;
+    let progressTimer   = null;
+
+    /*
+     * Nom de fichier fictif et taille fictive pour le "téléchargement".
+     * Tu peux changer ces valeurs pour plus de fun.
+     */
+    const fakeFileName = "confidential_data_v3.7z";
+    const fakeFileSize = "742 Mo";
+
+    /*
+     * Utilitaire : retourne l'heure "HH:MM:SS" pour annoter les logs.
+     */
+    function getTimeStamp() {
+        const now = new Date();
+        const h = String(now.getHours()).padStart(2, "0");
+        const m = String(now.getMinutes()).padStart(2, "0");
+        const s = String(now.getSeconds()).padStart(2, "0");
+        return `${h}:${m}:${s}`;
+    }
+
+    /*
+     * Ajoute une ligne au terminal.
+     *  - text  : texte à afficher
+     *  - isSystem : si true, on applique une classe "system" (couleur légèrement différente)
+     */
+    function addLogLine(text, isSystem = false) {
+        const line = document.createElement("div");
+        line.classList.add("log-line");
+        if (isSystem) {
+            line.classList.add("system");
+        }
+        line.textContent = `[${getTimeStamp()}] ${text}`;
+        terminalLog.appendChild(line);
+
+        // On force le scroll vers le bas pour voir la dernière ligne.
+        terminalLog.scrollTop = terminalLog.scrollHeight;
+    }
+
+    /*
+     * Réinitialise la barre de progression et le label.
+     */
+    function resetProgress() {
+        currentProgress = 0;
+        progressFill.style.width = "0%";
+        progressPercent.textContent = "0%";
+        progressLabel.textContent = "Aucun téléchargement en cours.";
+    }
+
+    /*
+     * Met à jour la barre de progression avec une nouvelle valeur (0–100).
+     */
+    function updateProgress(value) {
+        currentProgress = Math.min(100, Math.max(0, value)); // clamp 0–100
+        progressFill.style.width = currentProgress + "%";
+        progressPercent.textContent = currentProgress + "%";
+    }
+
+    /*
+     * Lance la simulation de téléchargement :
+     *  - désactive le bouton
+     *  - réinitialise la barre de progression
+     *  - crée un interval qui augmente le pourcentage petit à petit
+     *  - ajoute des lignes de logs à certains paliers
+     */
+    function startFakeDownload() {
+        if (isDownloading) return; // si déjà en cours, on ignore
+
+        isDownloading = true;
+        downloadBtn.disabled = true;
+        downloadBtn.textContent = "Téléchargement en cours…";
+
+        resetProgress();
+        progressLabel.textContent = `Téléchargement de ${fakeFileName} (${fakeFileSize})…`;
+
+        addLogLine(`Commande reçue : download ${fakeFileName}`);
+        addLogLine("Connexion au serveur distant sécurisé…", true);
+        addLogLine("Handshake TLS 1.3… OK", true);
+        addLogLine("Négociation du canal chiffré… OK", true);
+        addLogLine("Transfert en cours…", true);
+
+        /*
+         * On utilise setInterval pour simuler la progression.
+         * Toutes les ~120ms, on augmente la progression de 1 à 4%.
+         */
+        progressTimer = setInterval(() => {
+            // Incrément aléatoire pour effet "organique"
+            const step = Math.floor(Math.random() * 4) + 1; // 1–4
+            const nextValue = currentProgress + step;
+            updateProgress(nextValue);
+
+            // Logs à certains paliers de progression
+            if (currentProgress >= 20 && currentProgress < 25) {
+                addLogLine("Chunk 1/4 reçu… (25%).", true);
+            } else if (currentProgress >= 50 && currentProgress < 55) {
+                addLogLine("Chunk 2/4 reçu… (50%).", true);
+            } else if (currentProgress >= 75 && currentProgress < 80) {
+                addLogLine("Chunk 3/4 reçu… (75%).", true);
+            } else if (currentProgress >= 95 && currentProgress < 100) {
+                addLogLine("Chunk 4/4 reçu. Finalisation…", true);
+            }
+
+            // Si on a atteint ou dépassé 100%, on termine la simulation
+            if (currentProgress >= 100) {
+                clearInterval(progressTimer);
+                progressTimer = null;
+                finishFakeDownload();
+            }
+        }, 120);
+    }
+
+    /*
+     * Appelée quand la progression a atteint 100%.
+     *  - affiche des logs de fin
+     *  - met à jour le label et le bouton
+     */
+    function finishFakeDownload() {
+        updateProgress(100);
+        progressLabel.textContent = `Téléchargement terminé : ${fakeFileName} (${fakeFileSize}).`;
+        addLogLine(`Téléchargement terminé : ${fakeFileName}`, true);
+        addLogLine("Validation de l’intégrité… SHA-256 OK.", true);
+        addLogLine("Fichier stocké dans /secure/downloads/", true);
+        addLogLine("Opération terminée avec succès.", true);
+
+        // On réactive le bouton pour permettre de relancer la simulation.
+        isDownloading = false;
+        downloadBtn.disabled = false;
+        downloadBtn.textContent = "Relancer le téléchargement";
+    }
+
+    /*
+     * Gestionnaire de clic sur le bouton.
+     *  - lance la simulation si aucune n'est en cours
+     */
+    downloadBtn.addEventListener("click", () => {
+        startFakeDownload();
+    });
+</script>
+</body>
+</html>

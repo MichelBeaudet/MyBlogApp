@@ -9,6 +9,33 @@
     --font: 'Share Tech Mono', monospace;
 }
 
+.funny-float {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(255,255,255,0.9);
+    padding: 20px;
+    border-radius: 10px;
+    font-size: 1.2rem;
+    z-index: 9999;
+    animation: pop 0.3s ease-out;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+@keyframes pop {
+    from {
+        transform: scale(0.5) translate(-50%, -50%);
+        opacity: 0;
+    }
+
+    to {
+        transform: scale(1) translate(-50%, -50%);
+        opacity: 1;
+    }
+}
+
+
 /* Reset */
 * {
     margin: 0;

@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Terminal Hacker - Téléchargement fictif</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: #000000;
+            color: #00ff66;
+            font-family: "Courier New", monospace;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 20px;
+        }
+
+        .wrapper {
+            width: 100%;
+            max-width: 1100px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            letter-spacing: 2px;
+            font-size: 1.6rem;
+        }
+
+        .subtitle {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+            color: #00aa44;
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: 2fr 1.7fr;
+            gap: 16px;
+        }
+
+        .terminal,
+        .decoder {
+            background-color: #020202;
+            border: 2px solid #00ff66;
+            box-shadow: 0 0 20px rgba(0, 255, 102, 0.25);
+            padding: 15px;
+            border-radius: 4px;
+        }
+
+        .header-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            color: #00dd55;
+            font-size: 0.85rem;
+        }
+
+        .dots {
+            display: flex;
+            gap: 6px;
+        }
+
+        .dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            border: 1px solid #00ff66;
+        }
+
+        .body-area {
+            background-color: #000000;
+            border: 1px solid #004422;
+            padding: 10px;
+            height: 260px;
+            overflow-y: auto;
+            font-size: 0.9rem;
+            line-height: 1.35;
+        }
+
+        .log-line {
+            white-space: pre-wrap;
+        }
+
+        .log-line.system {
+            color: #00aa55;
+        }
+
+        .controls {
+            margin-top: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        #downloadBtn {
+            align-self: flex-start;
+            background-color: #003311;
+            color: #00ff66;
+            border: 1px solid #00ff66;
+            padding: 10px 18px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: "Courier New", monospace;
+            font-size: 0.95rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            transition: background-color 0.15s, transform 0.05s, box-shadow 0.15s;
+        }
+
+        #downloadBtn:hover {
+            background-color: #005522;
+            box-shadow: 0 0 10px rgba(0, 255, 102, 0.4);
+        }
+
+        #downloadBtn:active {
+            transform: scale(0.97);
+            box-shadow: 0 0 5px rgba(0, 255, 102, 0.6);
+        }
+
+        #downloadBtn:disabled {
+            opacity: 0.6;
+            cursor: default;
+            box-shadow: none;
+        }
+
+        .progress-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .progress-label {
+            font-size: 0.85rem;
+            color: #00dd55;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 18px;
+            border-radius: 999px;
+            border: 1px solid #00ff66;
+            overflow: hidden;
+            background: linear-gradient(
+                to right,
+                rgba(0, 255, 102, 0.05),
+                rgba(0, 255, 102, 0.02)
+            );
+        }
+
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: repeating-linear-gradient(
+                -45deg,
+                #00ff66 0,
+                #00ff66 6px,
+                #00cc55 6px,
+                #00cc55 12px
+            );
+            transition: width 0.15s ease-out;
+        }
+
+        .progress-percent {
+            font-size: 0.9rem;
+        }
+
+        @keyframes blink {
+            0%, 49% { opacity: 1; }
+            50%, 100% { opacity: 0; }
+        }
+
+        .cursor {
+            display: inline-block;
+            width: 8px;
+            animation: blink 1s step-end infinite;
+        }
+
+        /* Styles spécifiques à la fenêtre de décodage ASCII */
+        .decoder-title {
+            font-size: 0.95rem;
+            margin-bottom: 4px;
+            color: #00dd77;
+        }
+
+        .decoder-caption {
+            font-size: 0.8rem;
+            margin-bottom: 6px;
+            color: #00aa66;
+        }
+
+        .decoder-line-offset {
+            color: #00dd88;
+        }
+
+        .decoder-line-hex {
+            color: #00ff66;
+        }
+
+        .decoder-line-ascii {
+            color: #00bb55;
+        }
+    </style>
+</head>
+<body>
+<div class="wrapper">
+    <h1>[ HACKER TERMINAL SIMULATOR ]</h1>
+    <p class="subtitle">Téléchargement fictif + décodage des bytes en temps réel…</p>
+
+    <div class="layout">
+        <!-- ===== TERMINAL PRINCIPAL (COMME VERSION ORIGINALE) ===== -->
+        <div class="terminal">
+            <div class="header-bar">
+                <div class="dots">
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                </div>
+                <span>root@darknode:/secure/downloads</span>
+            </div>
+
+            <div id="terminalLog" class="body-area">
+                <div class="log-line.system">[BOOT] Initialisation du noyau… OK</div>
+                <div class="log-line.system">[NET] Interface tun0… OK</div>
+                <div class="log-line.system">[VPN] Connexion au relais chiffré… OK</div>
+                <div class="log-line.system">[READY] Terminal prêt. En attente de commande.</div>
+                <div class="log-line">root@darknode:~$ <span class="cursor">▮</span></div>
+            </div>
+
+            <div class="controls">
+                <button id="downloadBtn" type="button">
+                    Lancer le téléchargement
+                </button>
+
+                <div class="progress-wrapper">
+                    <div id="progressLabel" class="progress-label">
+                        Aucun téléchargement en cours.
+                    </div>
+                    <div class="progress-bar" aria-hidden="true">
+                        <div id="progressFill" class="progress-fill"></div>
+                    </div>
+                    <div id="progressPercent" class="progress-percent">
+                        0%
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== FENÊTRE DE DÉCODAGE ASCII / BYTES ===== -->
+        <div class="decoder">
+            <div class="header-bar">
+                <span>byte_decoder@darknode</span>
+                <span>[STREAM : ACTIVE/IDLE]</span>
+            </div>
+
+            <div class="decoder-title">Real-time Byte Stream Decoder</div>
+            <div class="decoder-caption">
+                Flux simulé : adresse | hex | ASCII (caractères non imprimables → « . »)
+            </div>
+
+            <div id="decoderLog" class="body-area">
+                <!-- Le JS va remplir cette zone avec des lignes façon hexdump -->
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+/* ==== RÉFÉRENCES DOM ==== */
+const terminalLog      = document.getElementById("terminalLog");
+const downloadBtn      = document.getElementById("downloadBtn");
+const progressFill     = document.getElementById("progressFill");
+const progressPercent  = document.getElementById("progressPercent");
+const progressLabel    = document.getElementById("progressLabel");
+const decoderLog       = document.getElementById("decoderLog");
+
+/* ==== ÉTAT TÉLÉCHARGEMENT ==== */
+let currentProgress = 0;
+let isDownloading   = false;
+let progressTimer   = null;
+
+const fakeFileName = "confidential_data_v3.7z";
+const fakeFileSize = "742 Mo";
+
+/* ==== ÉTAT DÉCODEUR ASCII ==== */
+let decoderTimer = null;
+let decoderOffset = 0;
+
+/* ---------- UTILITAIRES ---------- */
+
+function getTimeStamp() {
+    const now = new Date();
+    return now.toTimeString().split(" ")[0];
+}
+
+function addLogLine(text, isSystem = false) {
+    const line = document.createElement("div");
+    line.classList.add("log-line");
+    if (isSystem) line.classList.add("system");
+    line.textContent = `[${getTimeStamp()}] ${text}`;
+
+    // CORRECTIF : append au lieu de insertBefore
+    terminalLog.appendChild(line);
+
+    terminalLog.scrollTop = terminalLog.scrollHeight;
+}
+
+function resetProgress() {
+    currentProgress = 0;
+    progressFill.style.width = "0%";
+    progressPercent.textContent = "0%";
+    progressLabel.textContent = "Aucun téléchargement en cours.";
+}
+
+function updateProgress(value) {
+    currentProgress = Math.min(100, Math.max(0, value));
+    progressFill.style.width = currentProgress + "%";
+    progressPercent.textContent = currentProgress + "%";
+}
+
+/* ---------- DÉCODEUR HEX/ASCII ---------- */
+
+function byteToHex(b) {
+    return b.toString(16).padStart(2, "0").toUpperCase();
+}
+
+function byteToAscii(b) {
+    if (b >= 32 && b <= 126) return String.fromCharCode(b);
+    return ".";
+}
+
+function generateDecoderLine() {
+    const count = 12; // régulier, meilleur rendu
+    const bytes = Array.from({ length: count }, () => Math.floor(Math.random() * 256));
+
+    const offsetStr = "0x" + decoderOffset.toString(16).padStart(8, "0").toUpperCase();
+    decoderOffset += count;
+
+    const hexPart = bytes.map(byteToHex).join(" ");
+    const asciiPart = bytes.map(byteToAscii).join("");
+
+    const line = document.createElement("div");
+    line.classList.add("log-line");
+
+    line.innerHTML =
+        `<span class="decoder-line-offset">${offsetStr}</span>  |  ` +
+        `<span class="decoder-line-hex">${hexPart}</span>  |  ` +
+        `<span class="decoder-line-ascii">${asciiPart}</span>`;
+
+    decoderLog.appendChild(line);
+    decoderLog.scrollTop = decoderLog.scrollHeight;
+}
+
+function startDecoderStream() {
+    stopDecoderStream();
+    decoderTimer = setInterval(generateDecoderLine, 120);
+}
+
+function stopDecoderStream() {
+    if (decoderTimer) {
+        clearInterval(decoderTimer);
+        decoderTimer = null;
+    }
+}
+
+/* ---------- TÉLÉCHARGEMENT ---------- */
+
+function startFakeDownload() {
+    if (isDownloading) return;
+
+    isDownloading = true;
+    downloadBtn.disabled = true;
+    downloadBtn.textContent = "Téléchargement…";
+
+    resetProgress();
+    progressLabel.textContent = `Téléchargement de ${fakeFileName} (${fakeFileSize})…`;
+
+    addLogLine(`Commande reçue : download ${fakeFileName}`);
+    addLogLine("Handshake TLS 1.3… OK", true);
+    addLogLine("Canal chiffré actif", true);
+
+    startDecoderStream();
+
+    progressTimer = setInterval(() => {
+        updateProgress(currentProgress + (1 + Math.random() * 3));
+
+        if (currentProgress >= 100) {
+            clearInterval(progressTimer);
+            finishFakeDownload();
+        }
+    }, 120);
+}
+
+function finishFakeDownload() {
+    updateProgress(100);
+    progressLabel.textContent = "Fichier téléchargé.";
+
+    addLogLine("Téléchargement terminé.", true);
+
+    stopDecoderStream();
+
+    isDownloading = false;
+    downloadBtn.disabled = false;
+    downloadBtn.textContent = "Relancer";
+}
+
+downloadBtn.addEventListener("click", startFakeDownload);
+
+</script>
+

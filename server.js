@@ -499,7 +499,6 @@ const MIME_BY_EXT = {
     '.m4v': 'video/x-m4v',
     '.webm': 'video/webm',
 };
-
 /**
  * Utility: ensure a client-provided file name resolves inside BASE_DIR.
  * This blocks path traversal (e.g., "../../Windows/system32").
@@ -601,6 +600,21 @@ server.get('/video_stream', async (req, res) => {
     } catch (err) {
         console.error('Error streaming file:', err);
         res.status(500).send('Failed to stream file.');
+    }
+});
+
+// /api/reserve
+const handleReservation = require("./js/teleportation_reservations.js");
+server.post("/teleportation_reservation", async (req, res) => {
+    try {
+        const result = await handleReservation(req.body);
+        res.json({ success: true, message: result });
+    } catch (err) {
+        console.error("Reservation error:", err);
+        res.status(500).json({
+            success: false,
+            message: "Transporter malfunction. Temporal buffer overloaded."
+        });
     }
 });
 
